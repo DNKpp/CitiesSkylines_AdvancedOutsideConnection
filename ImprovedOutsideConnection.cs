@@ -23,8 +23,6 @@ namespace ImprovedOutsideConnection
             base.OnCreated(loading);
 
             m_HarmonyInstance = HarmonyInstance.Create("connection.outside.improved");
-
-            Debug.Log(Name + ": Hello, World!");
         }
 
         public override void OnLevelLoaded(LoadMode mode)
