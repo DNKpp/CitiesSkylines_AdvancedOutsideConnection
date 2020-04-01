@@ -26,11 +26,6 @@ namespace ImprovedOutsideConnection
             Debug.Log(Name + ": Hello, World!");
         }
 
-        public override void OnReleased()
-        {
-            base.OnReleased();
-        }
-
         public override void OnLevelLoaded(LoadMode mode)
         {
             base.OnLevelLoaded(mode);
@@ -38,6 +33,20 @@ namespace ImprovedOutsideConnection
             m_HarmonyInstance.PatchAll();
 
             OutsideConnectionSettingsManager.instance.SyncWithBuildingManager();
+        }
+
+        public override void OnReleased()
+        {
+            m_HarmonyInstance.UnpatchAll();
+
+            base.OnReleased();
+        }
+
+        public override void OnLevelUnloading()
+        {
+            m_HarmonyInstance.UnpatchAll();
+
+            base.OnLevelUnloading();
         }
     }
 }
