@@ -1,8 +1,7 @@
 ﻿using ColossalFramework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.ComponentModel;
+using UnityEngine;
 
 namespace ImprovedOutsideConnection
 {
@@ -10,17 +9,22 @@ namespace ImprovedOutsideConnection
     {
         public enum NameModeType
         {
+            [Description("Vanilla")]
             Vanilla         = 0,
-            CustomFixed,
+            [Description("CustomSingle")]
+            CustomSingle,
+            [Description("CustomRandom")]
             CustomRandom
         }
         public NameModeType NameMode { get; set; }
         public TransportInfo.TransportType Type { get; set; }
+        public string NameText { get; set; } = new string(' ', 0);
+        public Vector3 Position { get; set; } = new Vector3(0, 0, 0);
     }
 
     class OutsideConnectionSettingsManager : Singleton<OutsideConnectionSettingsManager>
     {
-        private static Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict = new Dictionary<ushort, OutsideConnectionSettings>();
+        public Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict { get; internal set; } = new Dictionary<ushort, OutsideConnectionSettings>();
 
         public OutsideConnectionSettings GetSettings(ushort buildingID)
         {
@@ -32,10 +36,10 @@ namespace ImprovedOutsideConnection
         public void SyncWithBuildingManager()
         {
             var buildingMgr = BuildingManager.instance;
+            var oldSettingsDict = m_SettingsDict;
+            m_SettingsDict = new Dictionary<ushort, OutsideConnectionSettings>();
             foreach (var buildingID in BuildingManager.instance.GetOutsideConnections())
             {
-                var oldSettingsDict = m_SettingsDict;
-                m_SettingsDict = null;
                 OutsideConnectionSettings settings;
                 if (oldSettingsDict.TryGetValue(buildingID, out settings))
                 {
@@ -43,10 +47,12 @@ namespace ImprovedOutsideConnection
                 }
                 else
                 {
-                    var buildingAI = buildingMgr.m_buildings.m_buffer[buildingID].Info.m_buildingAI;
+                    var building = buildingMgr.m_buildings.m_buffer[buildingID];
+                    var buildingAI = building.Info.m_buildingAI;
                     var transportInfo = buildingAI.GetTransportLineInfo();
                     settings = new OutsideConnectionSettings();
                     settings.Type = transportInfo.m_transportType;
+                    settings.Position = building.m_position;
                     m_SettingsDict.Add(buildingID, settings);
                 }
             }
