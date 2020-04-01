@@ -60,6 +60,8 @@
     <Compile Include="ImprovedOutsideConnection.cs" />
     <Compile Include="OutsideConnectionSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SettingsGUI.cs" />
+    <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

@@ -1,6 +1,4 @@
 ﻿using ICities;
-
-using ColossalFramework;
 using Harmony;
 using UnityEngine;
 
@@ -14,14 +12,17 @@ namespace ImprovedOutsideConnection
 
         public string Description => "Advanced options for outside connections.";
 
-        HarmonyInstance m_HarmonyInstance;
+        public static bool InGame { get; internal set; } = false;
+
+        HarmonyInstance m_HarmonyInstance = null;
+
+        public static SettingsGUI m_SettingsGUI = null;
 
         public override void OnCreated(ILoading loading)
         {
             base.OnCreated(loading);
 
             m_HarmonyInstance = HarmonyInstance.Create("connection.outside.improved");
-            //m_HarmonyInstance.PatchAll();
 
             Debug.Log(Name + ": Hello, World!");
         }
@@ -30,23 +31,49 @@ namespace ImprovedOutsideConnection
         {
             base.OnLevelLoaded(mode);
 
-            m_HarmonyInstance.PatchAll();
+            switch (mode)
+            {
+                case LoadMode.NewGame:
+                case LoadMode.LoadGame:
+                    InGame = true;
 
-            OutsideConnectionSettingsManager.instance.SyncWithBuildingManager();
+                    m_HarmonyInstance.PatchAll();
+
+                    OutsideConnectionSettingsManager.instance.SyncWithBuildingManager();
+
+                    var cameraController = GameObject.FindObjectOfType<CameraController>();
+                    m_SettingsGUI = cameraController.gameObject.AddComponent<SettingsGUI>();
+                    break;
+            }
         }
 
         public override void OnReleased()
         {
-            m_HarmonyInstance.UnpatchAll();
-
             base.OnReleased();
+            if (InGame)
+            {
+                m_HarmonyInstance.UnpatchAll();
+            }
         }
 
         public override void OnLevelUnloading()
         {
-            m_HarmonyInstance.UnpatchAll();
-
             base.OnLevelUnloading();
+
+            if (!InGame)
+                return;
+
+            try
+            {
+                m_HarmonyInstance.UnpatchAll();
+
+                GameObject.Destroy(m_SettingsGUI);
+                m_SettingsGUI = null;
+            }
+            finally
+            {
+                InGame = false;
+            }
         }
     }
 }
