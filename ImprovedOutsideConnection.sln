@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29920.165
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImprovedOutsideConnection", "ImprovedOutsideConnection.csproj", "{B9093244-2A53-4A85-9F67-4D6A3C135B29}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B9093244-2A53-4A85-9F67-4D6A3C135B29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9093244-2A53-4A85-9F67-4D6A3C135B29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9093244-2A53-4A85-9F67-4D6A3C135B29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9093244-2A53-4A85-9F67-4D6A3C135B29}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {90A47EFA-11E8-4719-B493-69B3D8099542}
+	EndGlobalSection
+EndGlobal
