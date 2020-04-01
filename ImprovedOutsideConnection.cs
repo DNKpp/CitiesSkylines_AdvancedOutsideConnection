@@ -64,6 +64,7 @@ namespace ImprovedOutsideConnection
             try
             {
                 m_HarmonyInstance.UnpatchAll();
+                m_HarmonyInstance = null;
 
                 GameObject.Destroy(m_SettingsGUI);
                 m_SettingsGUI = null;
