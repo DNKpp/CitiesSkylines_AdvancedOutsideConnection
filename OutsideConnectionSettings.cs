@@ -25,7 +25,30 @@ namespace ImprovedOutsideConnection
 
     class OutsideConnectionSettingsManager : Singleton<OutsideConnectionSettingsManager>
     {
-        public Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict { get; internal set; } = new Dictionary<ushort, OutsideConnectionSettings>();
+        private Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict;
+
+        public Dictionary<ushort, OutsideConnectionSettings> SettingsDict
+        {
+            get { return m_SettingsDict; }
+            set { this.m_SettingsDict = value; }
+        }
+
+        private OutsideConnectionSettingsManager()
+        {
+        }
+
+        public void Init()
+        {
+            if (!TryLoadData(out m_SettingsDict))
+                Debug.Log("ImprovedOutsideConnection: No saved data found.");
+
+            SerializableDataExtension.instance.EventSaveData += new SerializableDataExtension.SaveDataEventHandler(OutsideConnectionSettingsManager.OnSaveData);
+        }
+
+        public void Deinit()
+        {
+            SerializableDataExtension.instance.EventSaveData -= new SerializableDataExtension.SaveDataEventHandler(OutsideConnectionSettingsManager.OnSaveData);
+        }
 
         public void SyncWithBuildingManager()
         {
@@ -65,6 +88,17 @@ namespace ImprovedOutsideConnection
                 return (int)lhs.Value.Type - (int)rhs.Value.Type;
             });
             return settingsArr;
+        }
+
+        private static void OnSaveData()
+        {
+
+        }
+
+        private bool TryLoadData(out Dictionary<ushort, OutsideConnectionSettings> settings)
+        {
+            settings = new Dictionary<ushort, OutsideConnectionSettings>();
+            return false;
         }
     }
 }

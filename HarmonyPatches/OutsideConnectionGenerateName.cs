@@ -10,7 +10,7 @@ namespace ImprovedOutsideConnection.HarmonyPatches
     {
         private static bool Prefix(ushort buildingID, ref string __result)
         {
-            var settings = OutsideConnectionSettingsManager.instance.m_SettingsDict;
+            var settings = OutsideConnectionSettingsManager.instance.SettingsDict;
             OutsideConnectionSettings setting = null;
             if (settings.TryGetValue(buildingID, out setting))
             {

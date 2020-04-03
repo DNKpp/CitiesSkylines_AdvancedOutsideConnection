@@ -27,8 +27,6 @@ namespace ImprovedOutsideConnection
 
             m_HarmonyInstance = HarmonyInstance.Create(m_HarmonyIdentifier);
 
-
-
             if (loading.loadingComplete)
             {
                 switch (loading.currentMode)
@@ -77,7 +75,9 @@ namespace ImprovedOutsideConnection
         {
             InGame = true;
             m_HarmonyInstance.PatchAll();
-            OutsideConnectionSettingsManager.instance.SyncWithBuildingManager();
+            var outConMgr = OutsideConnectionSettingsManager.instance;
+            outConMgr.Init();
+            outConMgr.SyncWithBuildingManager();
 
             //var cameraController = GameObject.FindObjectOfType<CameraController>();
             //m_SettingsGUI = cameraController.gameObject.AddComponent<SettingsGUI>();
@@ -92,6 +92,8 @@ namespace ImprovedOutsideConnection
         {
             try
             {
+                OutsideConnectionSettingsManager.instance.Deinit();
+
                 m_HarmonyInstance.UnpatchAll(m_HarmonyIdentifier);
 
                 if (m_IOCGameObject)
