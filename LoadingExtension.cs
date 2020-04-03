@@ -7,14 +7,8 @@ using System.Collections.Generic;
 
 namespace AdvancedOutsideConnection
 {
-    public class AdvancedOutsideConnectionMod : LoadingExtensionBase, IUserMod
+    public class LoadingExtension : LoadingExtensionBase
     {
-        private readonly string version = "0.0.1";
-
-        public string Name => "AdvancedOutsideConnection";
-
-        public string Description => "Advanced options for outside connections.";
-
         public static bool InGame { get; internal set; } = false;
 
         private static string m_HarmonyIdentifier = "connection.outside.advanced";
