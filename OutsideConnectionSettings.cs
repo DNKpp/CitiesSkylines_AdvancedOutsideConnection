@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
+using System;
 
 namespace ImprovedOutsideConnection
 {
@@ -26,13 +27,6 @@ namespace ImprovedOutsideConnection
     {
         public Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict { get; internal set; } = new Dictionary<ushort, OutsideConnectionSettings>();
 
-        public OutsideConnectionSettings GetSettings(ushort buildingID)
-        {
-            OutsideConnectionSettings settings;
-            m_SettingsDict.TryGetValue(buildingID, out settings);
-            return settings;
-        }
-
         public void SyncWithBuildingManager()
         {
             var buildingMgr = BuildingManager.instance;
@@ -56,6 +50,21 @@ namespace ImprovedOutsideConnection
                     m_SettingsDict.Add(buildingID, settings);
                 }
             }
+        }
+
+        public KeyValuePair<ushort, OutsideConnectionSettings>[] GetSettingsAsArray()
+        {
+            var settingsArr = new KeyValuePair<ushort, OutsideConnectionSettings>[m_SettingsDict.Count];
+            int i = 0;
+            foreach (var el in m_SettingsDict)
+            {
+                settingsArr[i++] = el;
+            }
+            Array.Sort(settingsArr, (lhs, rhs) =>
+            {
+                return (int)lhs.Value.Type - (int)rhs.Value.Type;
+            });
+            return settingsArr;
         }
     }
 }
