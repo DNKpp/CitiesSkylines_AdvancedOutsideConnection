@@ -19,8 +19,6 @@ namespace ImprovedOutsideConnection
 
         HarmonyInstance m_HarmonyInstance = null;
 
-        public static SettingsGUI m_SettingsGUI = null;
-
         private GameObject m_IOCGameObject = null;
 
         public override void OnCreated(ILoading loading)
@@ -95,9 +93,6 @@ namespace ImprovedOutsideConnection
             try
             {
                 m_HarmonyInstance.UnpatchAll(m_HarmonyIdentifier);
-
-                GameObject.Destroy(m_SettingsGUI);
-                m_SettingsGUI = null;
 
                 if (m_IOCGameObject)
                     UnityEngine.Object.Destroy(m_IOCGameObject);
