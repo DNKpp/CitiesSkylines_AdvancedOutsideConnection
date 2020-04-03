@@ -64,7 +64,13 @@ namespace ImprovedOutsideConnection
                 SetupNameModeCheckboxes(templates);
 
                 m_NameModeCheckboxes[(int)settings.NameMode].isChecked = true;
-                m_NameString.text = settings.NameText;
+                m_NameString.text = "";
+                foreach (var str in settings.NameText)
+                {
+                    if (m_NameString.text.Length != 0)
+                        m_NameString.text += ";";
+                    m_NameString.text += str;
+                }
 
                 //autoFitChildrenHorizontally = true;
                 //autoFitChildrenVertically = true;
@@ -169,7 +175,13 @@ namespace ImprovedOutsideConnection
 
         private void OnNameTextSubmitted(UIComponent component, string text)
         {
-            m_Settings.NameText = text;
+            m_Settings.NameText.Clear();
+            foreach (var str in text.Split(';'))
+            {
+                str.Trim();
+                if (str.Length != 0)
+                    m_Settings.NameText.Add(str);
+            }
         }
 
         private void OnNameModeSubmitted(UIComponent component, bool isChecked)

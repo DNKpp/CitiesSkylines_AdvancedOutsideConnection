@@ -8,7 +8,7 @@ namespace ImprovedOutsideConnection.HarmonyPatches
     [HarmonyPatch("GenerateName")]
     class OutsideConnectionGenerateName
     {
-        private static bool Prefix(ushort buildingID, ref string __result)
+        private static bool Prefix(ushort buildingID, InstanceID caller, ref string __result)
         {
             var settings = OutsideConnectionSettingsManager.instance.SettingsDict;
             OutsideConnectionSettings setting = null;
@@ -18,10 +18,9 @@ namespace ImprovedOutsideConnection.HarmonyPatches
                 {
                     case OutsideConnectionSettings.NameModeType.CustomSingle:
                         {
-                            var textArr = setting.NameText.Split(';');
-                            if (textArr.Length != 0)
+                            if (setting.NameText.Count != 0)
                             {
-                                __result = textArr[0];
+                                __result = setting.NameText[0];
                                 return false;
                             }
                             break;
@@ -29,11 +28,10 @@ namespace ImprovedOutsideConnection.HarmonyPatches
 
                     case OutsideConnectionSettings.NameModeType.CustomRandom:
                         {
-                            var textArr = setting.NameText.Split(';');
-                            if (textArr.Length != 0)
+                            if (setting.NameText.Count != 0)
                             {
-                                Randomizer r = new Randomizer(buildingID);
-                                __result = textArr[r.Int32(0, textArr.Length - 1)];
+                                Randomizer r = new Randomizer(caller.Index);
+                                __result = setting.NameText[r.Int32((uint)setting.NameText.Count)];
                                 return false;
                             }
                             break;
