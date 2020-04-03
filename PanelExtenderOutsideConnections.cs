@@ -59,7 +59,7 @@ namespace ImprovedOutsideConnection
                 m_LocationLabel = AddUIComponent<UILabel>();
                 UIUtils.CopyStyle(m_LocationLabel, templates.label);
                 m_LocationLabel.name = "LocationLabel";
-                m_LocationLabel.text = "Location:\t" + settings.Position.x + " / " + settings.Position.y;
+                m_LocationLabel.text = "Location:\t" + settings.Position.x + " / " + settings.Position.z;
 
                 SetupNameModeCheckboxes(templates);
 
@@ -199,8 +199,8 @@ namespace ImprovedOutsideConnection
 
         private OutsideConnectionsInfoViewPanel m_OutConsInfoPanel = null;
         private UIPanel m_MainPanel = null;
+        private UIButton[] m_TabstripButtons = null;
         private bool m_Initialized = false;
-        private bool m_WasVisible = false;
 
         private void OnDestroy()
         {
@@ -217,12 +217,12 @@ namespace ImprovedOutsideConnection
             }
             else
             {
-                if (m_OutConsInfoPanel.component.isVisible)
-                {
-                    //OutsideConnectionSettingsManager.instance.SyncWithBuildingManager();
-                    m_MainPanel.Show();
-                }
-                m_WasVisible = m_OutConsInfoPanel.component.isVisible;
+                //if (m_OutConsInfoPanel.component.isVisible)
+                //{
+                //    //OutsideConnectionSettingsManager.instance.SyncWithBuildingManager();
+                //    m_MainPanel.Show();
+                //}
+                //m_WasVisible = m_OutConsInfoPanel.component.isVisible;
                 //this.UpdateBindings();
             }
         }
@@ -319,7 +319,7 @@ namespace ImprovedOutsideConnection
             tabStrip.tabPages = tabs;
 
             var transferTypes = new TransportInfo.TransportType[] { TransportInfo.TransportType.Bus, TransportInfo.TransportType.Airplane, TransportInfo.TransportType.Ship, TransportInfo.TransportType.Train };
-            UIButton[] tabStringButtons = new UIButton[transferTypes.Length];
+            m_TabstripButtons = new UIButton[transferTypes.Length];
 
             OutsideConnectionSettingsManager.instance.SyncWithBuildingManager();
             var connectionSettingsArr = OutsideConnectionSettingsManager.instance.GetSettingsAsArray();
@@ -337,7 +337,7 @@ namespace ImprovedOutsideConnection
                 button.autoSize = true;
                 button.textPadding = new RectOffset(30, 30, 7, 5);
                 button.text = transTypeStr;
-                tabStringButtons[i] = button;
+                m_TabstripButtons[i] = button;
 
                 var tab = (UIPanel)tabs.AddTabPage("Tab" + transTypeStr);
                 //tab.autoSize = true;
@@ -377,7 +377,7 @@ namespace ImprovedOutsideConnection
                 scrollable.scrollWheelAmount = 109;
                 scrollable.scrollWheelDirection = UIOrientation.Vertical;
                 scrollable.size = new Vector2(440, 600);
-                scrollable.backgroundSprite = "GenericPanel";
+                //scrollable.backgroundSprite = "GenericPanel";
                 scrollable.builtinKeyNavigation = true;
                 //scrollable.useScrollMomentum = true;
                 scrollable.useTouchMouseScroll = true;
@@ -391,14 +391,26 @@ namespace ImprovedOutsideConnection
                         settingsPanels[settingsI++] = settingsPanel;
                     }
                 }
+                ++i;
             }
 
             // This is needed, because otherwise the tab panel will appear buggy
-            tabStringButtons[0].SimulateClick();
-            //m_MainPanel.size = new Vector2(tabStrip.width + 2 * sidePadding, 320f);
-            //m_MainPanel.size = tabStrip.size;
+            m_TabstripButtons[1].SimulateClick();
+            m_TabstripButtons[0].SimulateClick();
+
+            m_MainPanel.eventVisibilityChanged += new PropertyChangedEventHandler<bool>(OnVisibilityChanged);
 
             m_Initialized = true;
+        }
+
+        private void OnVisibilityChanged(UIComponent component, bool visible)
+        {
+            // This is needed, because otherwise the tab panel will appear buggy
+            if (m_Initialized)
+            {
+                m_TabstripButtons[1].SimulateClick();
+                m_TabstripButtons[0].SimulateClick();
+            }
         }
     }
 }
