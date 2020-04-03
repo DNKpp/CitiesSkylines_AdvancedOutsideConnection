@@ -4,7 +4,7 @@ using System.ComponentModel;
 using UnityEngine;
 using System;
 
-namespace ImprovedOutsideConnection
+namespace AdvancedOutsideConnection
 {
     class OutsideConnectionSettings
     {
@@ -43,7 +43,7 @@ namespace ImprovedOutsideConnection
         public void Init()
         {
             if (!TryLoadData(out m_SettingsDict))
-                Debug.Log("ImprovedOutsideConnection: No saved data found.");
+                Debug.Log("AdvancedOutsideConnection: No saved data found.");
 
             SerializableDataExtension.instance.EventSaveData += new SerializableDataExtension.SaveDataEventHandler(OutsideConnectionSettingsManager.OnSaveData);
         }
@@ -102,7 +102,7 @@ namespace ImprovedOutsideConnection
 
         static private void OnSaveData()
         {
-            Debug.Log("ImprovedOutsideConnection: Begin save data.");
+            Debug.Log("AdvancedOutsideConnection: Begin save data.");
             FastList<byte> buffer = new FastList<byte>();
             try
             {
@@ -120,11 +120,11 @@ namespace ImprovedOutsideConnection
                     }
                 }
                 SerializableDataExtension.instance.SerializableData.SaveData(_dataID, buffer.ToArray());
-                Debug.Log("ImprovedOutsideConnection: Save data successful.");
+                Debug.Log("AdvancedOutsideConnection: Save data successful.");
             }
             catch (Exception ex)
             {
-                Debug.LogError("ImprovedOutsideConnection: Error while saving data! " + ex.Message + " " + (object)ex.InnerException);
+                Debug.LogError("AdvancedOutsideConnection: Error while saving data! " + ex.Message + " " + (object)ex.InnerException);
             }
         }
 
@@ -132,11 +132,11 @@ namespace ImprovedOutsideConnection
         {
             settingsDict = new Dictionary<ushort, OutsideConnectionSettings>();
 
-            Debug.Log("ImprovedOutsideConnection: Begin load data.");
+            Debug.Log("AdvancedOutsideConnection: Begin load data.");
             byte[] buffer = SerializableDataExtension.instance.SerializableData.LoadData(_dataID);
             if (buffer == null)
             {
-                Debug.Log("ImprovedOutsideConnection: No related data found.");
+                Debug.Log("AdvancedOutsideConnection: No related data found.");
                 return false;
             }
 
@@ -144,20 +144,20 @@ namespace ImprovedOutsideConnection
             try
             {
                 var version = SerializableDataExtension.ReadUInt16(buffer, ref index);
-                Debug.Log("ImprovedOutsideConnection: Start deserialize data version: " + version);
+                Debug.Log("AdvancedOutsideConnection: Start deserialize data version: " + version);
 
                 switch (version)
                 {
                     case 1:
                         return TryLoadData1(ref settingsDict, ref buffer, ref index);
                     default:
-                        Debug.LogError("ImprovedOutsideConnection: No protocol defined for version: " + version);
+                        Debug.LogError("AdvancedOutsideConnection: No protocol defined for version: " + version);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError("ImprovedOutsideConnection: Error while loading data! " + ex.Message + " " + (object)ex.InnerException);
+                Debug.LogError("AdvancedOutsideConnection: Error while loading data! " + ex.Message + " " + (object)ex.InnerException);
             }
             return false;
         }

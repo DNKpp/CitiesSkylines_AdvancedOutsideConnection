@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ImprovedOutsideConnection
+namespace AdvancedOutsideConnection
 {
     public static class Utils
     {

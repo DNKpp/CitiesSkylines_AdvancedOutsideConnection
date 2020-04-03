@@ -3,7 +3,7 @@ using Harmony;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ImprovedOutsideConnection
+namespace AdvancedOutsideConnection
 {
     class TemplateWidgets
     {

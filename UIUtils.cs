@@ -1,7 +1,7 @@
 ﻿using ColossalFramework.UI;
 using UnityEngine;
 
-namespace ImprovedOutsideConnection
+namespace AdvancedOutsideConnection
 {
     public static class UIUtils
     {

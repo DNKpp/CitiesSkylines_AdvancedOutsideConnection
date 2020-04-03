@@ -5,19 +5,19 @@ using ColossalFramework.UI;
 using ColossalFramework.Plugins;
 using System.Collections.Generic;
 
-namespace ImprovedOutsideConnection
+namespace AdvancedOutsideConnection
 {
-    public class ImprovedOutsideConnectionMod : LoadingExtensionBase, IUserMod
+    public class AdvancedOutsideConnectionMod : LoadingExtensionBase, IUserMod
     {
         private readonly string version = "0.0.1";
 
-        public string Name => "ImprovedOutsideConnection";
+        public string Name => "AdvancedOutsideConnection";
 
         public string Description => "Advanced options for outside connections.";
 
         public static bool InGame { get; internal set; } = false;
 
-        private static string m_HarmonyIdentifier = "connection.outside.improved";
+        private static string m_HarmonyIdentifier = "connection.outside.advanced";
 
         HarmonyInstance m_HarmonyInstance = null;
 

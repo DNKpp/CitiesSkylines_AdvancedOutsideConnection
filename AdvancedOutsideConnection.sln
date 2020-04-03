@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29920.165
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImprovedOutsideConnection", "ImprovedOutsideConnection.csproj", "{B9093244-2A53-4A85-9F67-4D6A3C135B29}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdvancedOutsideConnection", "AdvancedOutsideConnection.csproj", "{B9093244-2A53-4A85-9F67-4D6A3C135B29}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

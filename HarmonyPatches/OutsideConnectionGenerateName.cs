@@ -2,7 +2,7 @@
 using Harmony;
 using UnityEngine;
 
-namespace ImprovedOutsideConnection.HarmonyPatches
+namespace AdvancedOutsideConnection.HarmonyPatches
 {
     [HarmonyPatch(typeof(OutsideConnectionAI))]
     [HarmonyPatch("GenerateName")]
@@ -43,7 +43,7 @@ namespace ImprovedOutsideConnection.HarmonyPatches
                 }
             }
             else
-                Debug.Log("ImprovedOutsideConnection: GenerateName: No settings for OutsideConnection found.");
+                Debug.Log("AdvancedOutsideConnection: GenerateName: No settings for OutsideConnection found.");
 
             return true;    // Well, we skip the original code, because it isn't necessary and this way we safe some performance. Are there any good reasons not to do?
         }

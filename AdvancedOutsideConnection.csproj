@@ -7,8 +7,8 @@
     <ProjectGuid>{B9093244-2A53-4A85-9F67-4D6A3C135B29}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ImprovedOutsideConnection</RootNamespace>
-    <AssemblyName>ImprovedOutsideConnection</AssemblyName>
+    <RootNamespace>AdvancedOutsideConnection</RootNamespace>
+    <AssemblyName>AdvancedOutsideConnection</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>false</Deterministic>
@@ -60,7 +60,7 @@
     <Compile Include="UIUtils.cs" />
     <Compile Include="PanelExtenderOutsideConnections.cs" />
     <Compile Include="HarmonyPatches\OutsideConnectionGenerateName.cs" />
-    <Compile Include="ImprovedOutsideConnection.cs" />
+    <Compile Include="AdvancedOutsideConnection.cs" />
     <Compile Include="OutsideConnectionSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils.cs" />

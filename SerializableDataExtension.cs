@@ -7,7 +7,7 @@
 using ICities;
 using System;
 
-namespace ImprovedOutsideConnection
+namespace AdvancedOutsideConnection
 {
     public class SerializableDataExtension : ISerializableDataExtension
     {
