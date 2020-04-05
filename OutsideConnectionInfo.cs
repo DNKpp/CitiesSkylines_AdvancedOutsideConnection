@@ -9,7 +9,7 @@ namespace AdvancedOutsideConnection
         private UIPanel m_MainPanel = null;
         private UIPanel m_Background = null;
         private UISprite m_TransportTypeSprite = null;
-        private UITextField m_ConnectionNameLabel = null;
+        private UITextField m_ConnectionNameTextfield = null;
         private Color32 m_BackgroundColor = new Color32(49, 52, 58, 0);
         private UIButton m_DetailViewButton = null;
         private bool m_IsMouseOver = false;
@@ -34,29 +34,34 @@ namespace AdvancedOutsideConnection
             m_TransportTypeSprite.size = new Vector2(28, 28);
             m_TransportTypeSprite.relativePosition = new Vector3(12, 8);
 
-            m_ConnectionNameLabel = m_MainPanel.AddUIComponent<UITextField>();
-            m_ConnectionNameLabel.size = new Vector2(100, 35);
-            m_ConnectionNameLabel.relativePosition = new Vector3(100, 10);
-            m_ConnectionNameLabel.horizontalAlignment = UIHorizontalAlignment.Center;
-            m_ConnectionNameLabel.verticalAlignment = UIVerticalAlignment.Middle;
-            m_ConnectionNameLabel.anchor = UIAnchorStyle.Right | UIAnchorStyle.Left | UIAnchorStyle.CenterVertical;
-            m_ConnectionNameLabel.textScale = 1f;
-            m_ConnectionNameLabel.font = WidgetsFactory.instance.textFont;
-            m_ConnectionNameLabel.textColor = new Color32(185, 221, 254, 255);
-            m_ConnectionNameLabel.multiline = false;
-            m_ConnectionNameLabel.readOnly = false;
-            m_ConnectionNameLabel.cursorBlinkTime = 0.45f;
-            m_ConnectionNameLabel.cursorWidth = 1;
-            m_ConnectionNameLabel.selectionSprite = "EmptySprite";
-            m_ConnectionNameLabel.focusedBgSprite = "TextFieldPanel";
-            m_ConnectionNameLabel.hoveredBgSprite = "TextFieldPanelHovered";
-            m_ConnectionNameLabel.selectionBackgroundColor = Color.white;
-            m_ConnectionNameLabel.allowFloats = false;
-            m_ConnectionNameLabel.numericalOnly = false;
-            m_ConnectionNameLabel.allowNegative = false;
-            m_ConnectionNameLabel.isPasswordField = false;
-            m_ConnectionNameLabel.builtinKeyNavigation = true;
-            m_ConnectionNameLabel.padding = new RectOffset(8, 3, 5, 5);
+            m_ConnectionNameTextfield = m_MainPanel.AddUIComponent<UITextField>();
+            m_ConnectionNameTextfield.size = new Vector2(100, 35);
+            m_ConnectionNameTextfield.relativePosition = new Vector3(100, 10);
+            m_ConnectionNameTextfield.horizontalAlignment = UIHorizontalAlignment.Center;
+            m_ConnectionNameTextfield.verticalAlignment = UIVerticalAlignment.Middle;
+            m_ConnectionNameTextfield.anchor = UIAnchorStyle.Right | UIAnchorStyle.Left | UIAnchorStyle.CenterVertical;
+            m_ConnectionNameTextfield.textScale = 1f;
+            m_ConnectionNameTextfield.font = WidgetsFactory.instance.textFont;
+            m_ConnectionNameTextfield.textColor = new Color32(185, 221, 254, 255);
+            m_ConnectionNameTextfield.multiline = false;
+            m_ConnectionNameTextfield.readOnly = false;
+            m_ConnectionNameTextfield.cursorBlinkTime = 0.45f;
+            m_ConnectionNameTextfield.cursorWidth = 1;
+            m_ConnectionNameTextfield.selectionSprite = "EmptySprite";
+            m_ConnectionNameTextfield.focusedBgSprite = "TextFieldPanel";
+            m_ConnectionNameTextfield.hoveredBgSprite = "TextFieldPanelHovered";
+            m_ConnectionNameTextfield.selectionBackgroundColor = Color.white;
+            m_ConnectionNameTextfield.allowFloats = false;
+            m_ConnectionNameTextfield.numericalOnly = false;
+            m_ConnectionNameTextfield.allowNegative = false;
+            m_ConnectionNameTextfield.isPasswordField = false;
+            m_ConnectionNameTextfield.builtinKeyNavigation = true;
+            m_ConnectionNameTextfield.padding = new RectOffset(8, 3, 5, 5);
+            m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newText)
+            {
+                if (m_CachedSettings != null)
+                    m_CachedSettings.Name = newText;
+            };
 
             m_DetailViewButton = m_MainPanel.AddUIComponent<UIButton>();
             m_DetailViewButton.size = new Vector2(28, 28);
@@ -108,7 +113,7 @@ namespace AdvancedOutsideConnection
                 return;
 
             SetupTransportTypeIcon();
-            m_ConnectionNameLabel.text = m_CachedSettings.Name;
+            m_ConnectionNameTextfield.text = m_CachedSettings.Name;
         }
 
         private void SetupTransportTypeIcon()
