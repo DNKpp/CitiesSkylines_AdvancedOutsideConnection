@@ -20,12 +20,14 @@ namespace AdvancedOutsideConnection
         public NameModeType NameMode { get; set; }
         public TransportInfo.TransportType Type { get; set; }
         public List<string> NameText { get; set; } = new List<string>();
+
+        public string Name = "";
         public Vector3 Position { get; set; } = new Vector3(0, 0, 0);
     }
 
     class OutsideConnectionSettingsManager : Singleton<OutsideConnectionSettingsManager>
     {
-        private static readonly string _dataID = "IOC_Data";
+        private static readonly string _dataID = "AOC_Data";
         private static readonly ushort _dataVersion = 1;
 
         private Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict = null;
@@ -36,14 +38,14 @@ namespace AdvancedOutsideConnection
             set { this.m_SettingsDict = value; }
         }
 
-        private OutsideConnectionSettingsManager()
+        protected OutsideConnectionSettingsManager()
         {
         }
 
         public void Init()
         {
             if (!TryLoadData(out m_SettingsDict))
-                Debug.Log("AdvancedOutsideConnection: No saved data found.");
+                Utils.Log("AdvancedOutsideConnection: No saved data found.");
 
             SerializableDataExtension.instance.EventSaveData += new SerializableDataExtension.SaveDataEventHandler(OutsideConnectionSettingsManager.OnSaveData);
         }
@@ -57,6 +59,7 @@ namespace AdvancedOutsideConnection
 
         public void SyncWithBuildingManager()
         {
+            var typeCount = new int[Utils.MaxEnumValue<TransportInfo.TransportType>() + 1];
             var oldSettingsDict = m_SettingsDict;
             m_SettingsDict = new Dictionary<ushort, OutsideConnectionSettings>();
             foreach (var buildingID in BuildingManager.instance.GetOutsideConnections())
@@ -70,8 +73,10 @@ namespace AdvancedOutsideConnection
                 {
                     settings = new OutsideConnectionSettings();
                     GetInfoFromOutsideConnection(ref settings, buildingID);
+                    settings.Name = settings.Type.ToString() + "-Outside Connection " + (typeCount[(int)settings.Type] + 1);
                     m_SettingsDict.Add(buildingID, settings);
                 }
+                ++typeCount[(int)settings.Type];
             }
         }
 
@@ -102,7 +107,7 @@ namespace AdvancedOutsideConnection
 
         static private void OnSaveData()
         {
-            Debug.Log("AdvancedOutsideConnection: Begin save data.");
+            Utils.Log("AdvancedOutsideConnection: Begin save data.");
             FastList<byte> buffer = new FastList<byte>();
             try
             {
@@ -118,13 +123,15 @@ namespace AdvancedOutsideConnection
                     {
                         SerializableDataExtension.WriteString(str, buffer);
                     }
+
+                    SerializableDataExtension.WriteString(keyValue.Value.Name, buffer);
                 }
                 SerializableDataExtension.instance.SerializableData.SaveData(_dataID, buffer.ToArray());
-                Debug.Log("AdvancedOutsideConnection: Save data successful.");
+                Utils.Log("AdvancedOutsideConnection: Save data successful.");
             }
             catch (Exception ex)
             {
-                Debug.LogError("AdvancedOutsideConnection: Error while saving data! " + ex.Message + " " + (object)ex.InnerException);
+                Utils.LogError("AdvancedOutsideConnection: Error while saving data! " + ex.Message + " " + (object)ex.InnerException);
             }
         }
 
@@ -132,11 +139,11 @@ namespace AdvancedOutsideConnection
         {
             settingsDict = new Dictionary<ushort, OutsideConnectionSettings>();
 
-            Debug.Log("AdvancedOutsideConnection: Begin load data.");
+            Utils.Log("AdvancedOutsideConnection: Begin load data.");
             byte[] buffer = SerializableDataExtension.instance.SerializableData.LoadData(_dataID);
             if (buffer == null)
             {
-                Debug.Log("AdvancedOutsideConnection: No related data found.");
+                Utils.Log("AdvancedOutsideConnection: No related data found.");
                 return false;
             }
 
@@ -144,20 +151,20 @@ namespace AdvancedOutsideConnection
             try
             {
                 var version = SerializableDataExtension.ReadUInt16(buffer, ref index);
-                Debug.Log("AdvancedOutsideConnection: Start deserialize data version: " + version);
+                Utils.Log("AdvancedOutsideConnection: Start deserialize data version: " + version);
 
                 switch (version)
                 {
                     case 1:
                         return TryLoadData1(ref settingsDict, ref buffer, ref index);
                     default:
-                        Debug.LogError("AdvancedOutsideConnection: No protocol defined for version: " + version);
+                        Utils.LogError("AdvancedOutsideConnection: No protocol defined for version: " + version);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError("AdvancedOutsideConnection: Error while loading data! " + ex.Message + " " + (object)ex.InnerException);
+                Utils.LogError("AdvancedOutsideConnection: Error while loading data! " + ex.Message + " " + (object)ex.InnerException);
             }
             return false;
         }
@@ -176,6 +183,8 @@ namespace AdvancedOutsideConnection
                 {
                     settings.NameText.Add(SerializableDataExtension.ReadString(buffer, ref index));
                 }
+
+                settings.Name = SerializableDataExtension.ReadString(buffer, ref index);
 
                 GetInfoFromOutsideConnection(ref settings, buildingID);
                 settingsDict.Add(buildingID, settings);
