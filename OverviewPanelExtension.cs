@@ -31,6 +31,8 @@ namespace AdvancedOutsideConnection
 
         private void OnDestroy()
         {
+            m_Initialized = false;
+
             if (m_MainPanel)
                 UnityEngine.Object.Destroy(m_MainPanel);
         }
@@ -205,6 +207,9 @@ namespace AdvancedOutsideConnection
 
         private void OnTransportTypeSort()
         {
+            if (!m_Initialized)
+                return;
+
             Sort(SortCriterion.TRANSPORT_TYPE,
                 (UIComponent lhs, UIComponent rhs) =>
                 {
@@ -220,6 +225,9 @@ namespace AdvancedOutsideConnection
 
         private void OnNameSort()
         {
+            if (!m_Initialized)
+                return;
+
             Sort(SortCriterion.NAME, CompareNames);
         }
 
