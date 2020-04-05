@@ -1,10 +1,205 @@
-﻿using ColossalFramework.UI;
-using UnityEngine;
+﻿using ColossalFramework;
+using ColossalFramework.UI;
+using System;
+using System.Linq;
+using System.Reflection;
 
 namespace AdvancedOutsideConnection
 {
+    public static class CommonSpriteNames
+    {
+        public static readonly string[] SubBarPublicTransport = new string[]
+        {
+            "SubBarPublicTransportBus",
+            "SubBarPublicTransportMetro",
+            "SubBarPublicTransportTrain",
+            "SubBarPublicTransportShip",
+            "SubBarPublicTransportPlane",
+            "SubBarPublicTransportTaxi",
+            "SubBarPublicTransportTram",
+            "",//"SubBarPublicTransportEvacuationBus",
+            "SubBarPublicTransportMonorail",
+            "SubBarPublicTransportCableCar",
+            "",//"SubBarPublicTransportPedestrian",
+            "SubBarPublicTransportTours",
+            "",//"SubBarPublicTransportHotAirBalloon",
+            "SubBarPublicTransportPost",
+            "SubBarPublicTransportTrolleybus",
+            "",//"SubBarPublicTransportFishing",
+            "",//"SubBarPublicTransportHelicopter",
+        };
+    }
+
+    public class WidgetsFactory
+    {
+        private static WidgetsFactory m_Instance = null;
+        public static WidgetsFactory instance
+        {
+            get
+            {
+                if (m_Instance == null)
+                {
+                    m_Instance = new WidgetsFactory();
+                    m_Instance.Init();
+                }
+                return m_Instance;
+            }
+        }
+
+        private UIComponent component = null;
+        private UIButton button = null;
+        private UIButton closeButton = null;
+        private UICheckBox checkbox = null;
+        private UILabel label = null;
+        private UILabel headlineLabel = null;
+        private UITabContainer tabContainer = null;
+        private UITabstrip tabstrip = null;
+        private UIPanel panel = null;
+        private UIPanel mainPanel = null;
+        private UISlicedSprite vThumb = null;
+        private UISlicedSprite vTrack = null;
+        private UISprite icon = null;
+        private UIButton tabButton = null;
+        private UISlicedSprite caption = null;
+
+        private UIFont m_HeadlineFont = null;
+        public UIFont headlineFont => m_HeadlineFont;
+        private UIFont m_TextFont = null;
+        public UIFont textFont => m_TextFont;
+
+        //private CursorInfo m_VerticalResizeHoverCursor = null;
+        //public CursorInfo verticalResizeHoverCursor => m_VerticalResizeHoverCursor;
+
+        private UIResizeHandle m_VerticalResizeHandle = null;
+        public UIResizeHandle verticalResizeHandle => m_VerticalResizeHandle;
+
+        private void Init()
+        {
+            try
+            {
+                component = UITemplateManager.Get("EmptyContainer");
+
+                var outsideConnectionInfoPanel = UIView.Find<UIPanel>(UIUtils.OutgoingConnectionInfoViewPanelName);
+                var infoPanelComponent = outsideConnectionInfoPanel.GetComponent<OutsideConnectionsInfoViewPanel>();
+
+                panel = infoPanelComponent.Find<UIPanel>("ExportLegend");
+                mainPanel = outsideConnectionInfoPanel;
+                button = infoPanelComponent.Find<UIButton>("Export");
+                label = infoPanelComponent.Find<UILabel>("ExportTotal");
+                m_TextFont = label.font;
+                tabstrip = infoPanelComponent.Find<UITabstrip>("Tabstrip");
+                caption = UIUtils.MakeCopy(infoPanelComponent.Find<UISlicedSprite>("Caption"), component);
+                headlineLabel = UIUtils.MakeCopy(caption.Find<UILabel>("Label"), component);
+                m_HeadlineFont = headlineLabel.font;
+                icon = UIUtils.MakeCopy(caption.Find<UISprite>("Icon"), component);
+                var captionClose = caption.Find<UIButton>("Close");
+                UIUtils.ReleaseEvents(captionClose);
+                closeButton = UIUtils.MakeCopy(captionClose, component);
+                //ReleaseEvents(ref templates.closeButton);
+
+                //var trafficRoutesInfoPanel = UIView.Find<UIPanel>(UIUtils.TrafficRoutesInfoViewPanelName);
+                //var trafficRoutesPanelComponent = trafficRoutesInfoPanel.GetComponent<TrafficRoutesInfoViewPanel>();
+                //templates.checkbox = trafficRoutesPanelComponent.Find<UICheckBox>("CheckboxPedestrians");
+
+                var publicTransportDetailPanel = UIView.Find<UIPanel>(UIUtils.PublicTransportDetailPanel);
+                //vTrack = publicTransportDetailPanel.Find<UISlicedSprite>("Track");
+                //vThumb = publicTransportDetailPanel.Find<UISlicedSprite>("Thumb");
+                m_VerticalResizeHandle = UIUtils.MakeCopy(publicTransportDetailPanel.Find<UIResizeHandle>("Resize Handle"), component);
+            }
+            catch (Exception ex)
+            {
+                Utils.LogError("Error while gathering templates! " + ex.Message + " " + (object)ex.InnerException);
+            }
+        }
+
+        public static UISlicedSprite AddCaption(UIComponent parent, string text, string spriteName = null)
+        {
+            var factory = instance;
+
+            var newCaption = UIUtils.MakeCopy(factory.caption, parent);
+            newCaption.width = parent.width;
+
+            var captionClose = newCaption.Find<UIButton>("Close");
+            UIUtils.ReleaseEvents(captionClose);
+            captionClose.eventClick += delegate (UIComponent component, UIMouseEventParameter mouseParam)
+            {
+                parent.Hide();
+            };
+
+            var dragHandle = newCaption.Find<UIDragHandle>("Drag Handle");
+            dragHandle.target = parent;
+
+            var captionLabel = newCaption.Find<UILabel>("Label");
+            captionLabel.text = text;
+
+            var captionIcon = newCaption.Find<UISprite>("Icon");
+            if (spriteName != null)
+                captionIcon.spriteName = spriteName;
+
+            return newCaption;
+        }
+
+        //public static UIPanel CopyOverviewPanel(string sourceName)
+        //{
+        //    var sourcePanel = UIView.library.Get<PublicTransportDetailPanel>("PublicTransportDetailPanel");
+        //    var sourcUIComponent = (UIPanel)sourcePanel.component;
+        //    var newPanel = UIUtils.MakeCopy(sourcUIComponent);
+
+        //    //var caption = newPanel.Find<UISlicedSprite>("Caption");
+        //    //var captionCloseButton = caption.Find<UIButton>("Close");
+        //    //UIUtils.ReleaseEvents(captionCloseButton);
+        //    //captionCloseButton.eventClick += new MouseEventHandler(
+        //    //    (component, mouseParam) =>
+        //    //    {
+        //    //        if (newPanel && newPanel.isVisible)
+        //    //            newPanel.Hide();
+        //    //    }
+        //    //);
+
+        //    //var captionLabel = caption.Find<UIButton>("Label");
+
+        //    return newPanel;
+        //}
+    }
+
     public static class UIUtils
     {
+        public static readonly string OutgoingConnectionInfoViewPanelName = "(Library) OutsideConnectionsInfoViewPanel";
+        public static readonly string TrafficRoutesInfoViewPanelName = "(Library) TrafficRoutesInfoViewPanel";
+        public static readonly string PublicTransportDetailPanel = "PublicTransportDetailPanel(Clone)";//"(Library) PublicTransportDetailPanel";
+
+        public static T MakeCopy<T>(T source, UIComponent parent = null, bool releaseEvents = false) where T : UIComponent
+        {
+            T newObject = null;
+            if (parent)
+            {
+                newObject = UnityEngine.Object.Instantiate(source, parent.transform);
+                parent.AttachUIComponent(newObject.gameObject);
+            }
+            else
+                newObject = UnityEngine.Object.Instantiate(source);
+
+            parent.AttachUIComponent(newObject.gameObject);
+
+            if (releaseEvents)
+                ReleaseEvents(newObject);
+            return newObject;
+            //var newObject = parent.AddUIComponent<T>();
+            //CopyStyle(newObject, source);
+            //return newObject;
+        }
+
+        public static void ReleaseEvents<T>(T component) where T : UIComponent
+        {
+            FieldInfo[] array = (from f in component.GetType().GetAllFields()
+                                 where typeof(Delegate).IsAssignableFrom(f.FieldType)
+                                 select f).ToArray();
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i].SetValue(component, null);
+            }
+        }
+
         public static void CopyStyle(UIPanel target, UIPanel source)
         {
             CopyStyle((UIComponent)target, source);
