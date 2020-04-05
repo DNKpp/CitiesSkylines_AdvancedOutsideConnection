@@ -43,7 +43,7 @@ namespace AdvancedOutsideConnection.HarmonyPatches
                 }
             }
             else
-                Debug.Log("AdvancedOutsideConnection: GenerateName: No settings for OutsideConnection found.");
+                Utils.Log("AdvancedOutsideConnection: GenerateName: No settings for OutsideConnection found.");
 
             return true;    // Well, we skip the original code, because it isn't necessary and this way we safe some performance. Are there any good reasons not to do?
         }
