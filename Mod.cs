@@ -2,11 +2,13 @@
 
 namespace AdvancedOutsideConnection
 {
-    class Mod : IUserMod
+    public class Mod : IUserMod
     {
-        private readonly string version = "0.0.1";
+        private static readonly string version = "0.0.1";
 
-        public string Name => "AdvancedOutsideConnection";
+        public static string ModName => "AdvancedOutsideConnection";
+
+        public string Name { get { return ModName; } }
 
         public string Description => "Advanced options for outside connections.";
     }
