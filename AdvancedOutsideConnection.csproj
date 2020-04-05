@@ -56,19 +56,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HarmonyPatches\OutsideConnectionGenerateName.cs" />
     <Compile Include="Mod.cs" />
+    <Compile Include="OutsideConnectionInfo.cs" />
+    <Compile Include="OutsideConnectionSettings.cs" />
+    <Compile Include="OverviewPanelExtension.cs" />
     <Compile Include="SerializableDataExtension.cs" />
     <Compile Include="UIUtils.cs" />
-    <Compile Include="PanelExtenderOutsideConnections.cs" />
-    <Compile Include="HarmonyPatches\OutsideConnectionGenerateName.cs" />
-    <Compile Include="AdvancedOutsideConnection.cs" />
-    <Compile Include="OutsideConnectionSettings.cs" />
+    <Compile Include="LoadingExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>mkdir "$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(TargetName)"
