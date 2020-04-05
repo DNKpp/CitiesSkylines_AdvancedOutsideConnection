@@ -15,7 +15,7 @@ namespace AdvancedOutsideConnection
 
         HarmonyInstance m_HarmonyInstance = null;
 
-        private GameObject m_IOCGameObject = null;
+        private GameObject m_GameObject = null;
 
         public override void OnCreated(ILoading loading)
         {
@@ -74,7 +74,7 @@ namespace AdvancedOutsideConnection
 
             // This is needed in cases where the mod is hot reloaded. Due to its implementation, the SerializableDataExtension OnCreated function will only be called during game loads.
             // This way we manually force the call, so we can relay on correct behavior afterwards.
-            // Remark: Potentially should only be active in debug mode?
+#if DEBUG
             if (late)
             {
                 var serDataWrapper = SimulationManager.instance.m_SerializableDataWrapper;
@@ -90,16 +90,17 @@ namespace AdvancedOutsideConnection
                     }
                 }
             }
+#endif
             SerializableDataExtension.instance.Loaded = true;
 
             var outConMgr = OutsideConnectionSettingsManager.instance;
             outConMgr.Init();
             outConMgr.SyncWithBuildingManager();
 
-            var objectOfType = UnityEngine.Object.FindObjectOfType<UIView>();
-            m_IOCGameObject = new GameObject("IOCGameObject");
-            m_IOCGameObject.transform.parent = objectOfType.transform;
-            m_IOCGameObject.AddComponent<PanelExtenderOutsideConnections>();
+            //var objectOfType = UnityEngine.Object.FindObjectOfType<UIView>();
+            m_GameObject = new GameObject("AOCGameObject");
+            //m_GameObject.transform.parent = objectOfType.transform;
+            m_GameObject.AddComponent<OverviewPanelExtension>();
         }
 
         private void Deinit()
@@ -110,8 +111,8 @@ namespace AdvancedOutsideConnection
 
                 SerializableDataExtension.instance.Loaded = false;
 
-                if (m_IOCGameObject)
-                    UnityEngine.Object.Destroy(m_IOCGameObject);
+                if (m_GameObject)
+                    UnityEngine.Object.Destroy(m_GameObject);
 
                 OutsideConnectionSettingsManager.instance.Deinit();
             }
