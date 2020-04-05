@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
@@ -25,6 +24,21 @@ namespace AdvancedOutsideConnection
         public static int MinEnumValue<E>()
         {
             return MinEnumValue<E, int>();
+        }
+
+        public static void Log(object message)
+        {
+            Debug.Log(Mod.ModName + ": " + message.ToString());
+        }
+
+        public static void LogError(object message)
+        {
+            Debug.LogError(Mod.ModName + ": " + message.ToString());
+        }
+
+        public static void LogWarning(object message)
+        {
+            Debug.LogWarning(Mod.ModName + ": " + message.ToString());
         }
     }
 }
