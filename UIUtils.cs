@@ -1,8 +1,11 @@
 ﻿using ColossalFramework;
 using ColossalFramework.UI;
+using Harmony;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
@@ -28,6 +31,88 @@ namespace AdvancedOutsideConnection
             "",//"SubBarPublicTransportFishing",
             "",//"SubBarPublicTransportHelicopter",
         };
+
+        public static readonly string MenuPanel2 = "MenuPanel2";
+        public static readonly string GenericPanel = "GenericPanel";
+
+        public static readonly string CheckBoxUnchecked = "check-unchecked";
+        public static readonly string CheckBoxChecked = "check-checked";
+
+        public class SpriteSet
+        {
+            public readonly string normal;
+            public readonly string disabled;
+            public readonly string focused;
+            public readonly string hovered;
+            public readonly string pressed;
+            
+
+            public SpriteSet(string normal, string disabled, string focused, string hovered, string pressed)
+            {
+                this.normal = normal;
+                this.disabled = disabled;
+                this.focused = focused;
+                this.hovered = hovered;
+                this.pressed = pressed;
+            }
+
+            public UIMultiStateButton.SpriteSet ToMultiStateButtonSpriteSet(UIMultiStateButton button)
+            {
+                var spriteSet = new UIMultiStateButton.SpriteSet();
+                spriteSet.Setter(button);
+                spriteSet.normal = normal;
+                spriteSet.disabled = disabled;
+                spriteSet.focused = focused;
+                spriteSet.hovered = hovered;
+                spriteSet.pressed = pressed;
+                return spriteSet;
+            }
+        };
+
+        public static readonly SpriteSet IconOutsideConnections = new SpriteSet(
+            "InfoIconOutsideConnections",
+            "InfoIconOutsideConnectionsDisabled",
+            "InfoIconOutsideConnectionsFocused",
+            "InfoIconOutsideConnectionsHovered",
+            "InfoIconOutsideConnectionsPressed"
+        );
+
+        public static readonly SpriteSet LocationMarkerActive = new SpriteSet(
+            "LocationMarkerActiveNormal",
+            "LocationMarkerActiveDisabled",
+            "",//"LocationMarkerActiveFocused",
+            "LocationMarkerActiveHovered",
+            "LocationMarkerActivePressed"
+        );
+
+        public static readonly SpriteSet LocationMarker = new SpriteSet(
+            "LocationMarkerNormal",
+            "LocationMarkerDisabled",
+            "",//"LocationMarkerFocused",
+            "LocationMarkerHovered",
+            "LocationMarkerPressed"
+        );
+
+        public static readonly SpriteSet IconClose = new SpriteSet(
+            "buttonclose",
+            "",
+            "",
+            "buttonclosehover",
+            "buttonclosepressed"
+        );
+
+        public static readonly string EmptySprite = "EmptySprite";
+
+        public static readonly SpriteSet TextField = new SpriteSet(
+            "",
+            "",
+            "TextFieldPanel",
+            "TextFieldPanelHovered",
+            ""
+        );
+
+        public static readonly string ScrollbarThumb = "ScrollbarThumb";
+        public static readonly string ScrollbarTrack = "ScrollbarTrack";
     }
 
     public class WidgetsFactory
@@ -55,7 +140,6 @@ namespace AdvancedOutsideConnection
         private UITabContainer tabContainer = null;
         private UITabstrip tabstrip = null;
         private UIPanel panel = null;
-        private UIPanel mainPanel = null;
         private UISlicedSprite vThumb = null;
         private UISlicedSprite vTrack = null;
         private UISprite icon = null;
@@ -67,8 +151,8 @@ namespace AdvancedOutsideConnection
         private UIFont m_TextFont = null;
         public UIFont textFont => m_TextFont;
 
-        //private CursorInfo m_VerticalResizeHoverCursor = null;
-        //public CursorInfo verticalResizeHoverCursor => m_VerticalResizeHoverCursor;
+        private CursorInfo m_VerticalResizeHoverCursor = null;
+        public CursorInfo verticalResizeHoverCursor => m_VerticalResizeHoverCursor;
 
         private UIResizeHandle m_VerticalResizeHandle = null;
         public UIResizeHandle verticalResizeHandle => m_VerticalResizeHandle;
@@ -83,7 +167,6 @@ namespace AdvancedOutsideConnection
                 var infoPanelComponent = outsideConnectionInfoPanel.GetComponent<OutsideConnectionsInfoViewPanel>();
 
                 panel = infoPanelComponent.Find<UIPanel>("ExportLegend");
-                mainPanel = outsideConnectionInfoPanel;
                 button = infoPanelComponent.Find<UIButton>("Export");
                 label = infoPanelComponent.Find<UILabel>("ExportTotal");
                 m_TextFont = label.font;
@@ -105,6 +188,7 @@ namespace AdvancedOutsideConnection
                 //vTrack = publicTransportDetailPanel.Find<UISlicedSprite>("Track");
                 //vThumb = publicTransportDetailPanel.Find<UISlicedSprite>("Thumb");
                 m_VerticalResizeHandle = UIUtils.MakeCopy(publicTransportDetailPanel.Find<UIResizeHandle>("Resize Handle"), component);
+                m_VerticalResizeHoverCursor = m_VerticalResizeHandle.hoverCursor;
             }
             catch (Exception ex)
             {
@@ -139,27 +223,268 @@ namespace AdvancedOutsideConnection
             return newCaption;
         }
 
-        //public static UIPanel CopyOverviewPanel(string sourceName)
-        //{
-        //    var sourcePanel = UIView.library.Get<PublicTransportDetailPanel>("PublicTransportDetailPanel");
-        //    var sourcUIComponent = (UIPanel)sourcePanel.component;
-        //    var newPanel = UIUtils.MakeCopy(sourcUIComponent);
+        public static UIButton AddButton(UIComponent parent, CommonSpriteNames.SpriteSet sprites, string name = "Button")
+        {
+            var button = parent.AddUIComponent<UIButton>();
+            button.name = name;
+            button.normalBgSprite = sprites.normal;
+            button.focusedBgSprite = sprites.focused;
+            button.disabledBgSprite = sprites.disabled;
+            button.pressedBgSprite = sprites.pressed;
+            button.hoveredBgSprite = sprites.hovered;
+            button.size = new Vector2(32, 32);
+            return button;
+        }
 
-        //    //var caption = newPanel.Find<UISlicedSprite>("Caption");
-        //    //var captionCloseButton = caption.Find<UIButton>("Close");
-        //    //UIUtils.ReleaseEvents(captionCloseButton);
-        //    //captionCloseButton.eventClick += new MouseEventHandler(
-        //    //    (component, mouseParam) =>
-        //    //    {
-        //    //        if (newPanel && newPanel.isVisible)
-        //    //            newPanel.Hide();
-        //    //    }
-        //    //);
+        public static UIPanel MakeMainPanel(GameObject gameObject, string name, Vector2 size)
+        {
+            var newPanel = gameObject.AddComponent<UIPanel>();
+            newPanel.name = name;
+            newPanel.size = size;
+            newPanel.clipChildren = true;
+            newPanel.backgroundSprite = CommonSpriteNames.MenuPanel2;
+            return newPanel;
+        }
 
-        //    //var captionLabel = caption.Find<UIButton>("Label");
+        public static UIResizeHandle AddPanelBottomResizeHandle(UIPanel parent, string name = "BottomResizeHandle")
+        {
+            var resizeHandle = parent.AddUIComponent<UIResizeHandle>();
+            resizeHandle.name = name;
+            resizeHandle.size = new Vector2(parent.width, 35);
+            resizeHandle.relativePosition = new Vector3(0, parent.height - resizeHandle.height);
+            resizeHandle.anchor = UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.Bottom;
+            resizeHandle.edges = UIResizeHandle.ResizeEdge.Bottom;
+            resizeHandle.hoverCursor = WidgetsFactory.instance.verticalResizeHoverCursor;
+            return resizeHandle;
+        }
 
-        //    return newPanel;
-        //}
+        public static UILabel AddLabel(UIComponent parent, string text, bool isHeadline = false, string name = "Label")
+        {
+            var label = parent.AddUIComponent<UILabel>();
+            label.name = name;
+            label.text = text;
+            label.verticalAlignment = UIVerticalAlignment.Middle;
+            label.textAlignment = UIHorizontalAlignment.Left;
+            label.anchor = UIAnchorStyle.Left | UIAnchorStyle.Top;
+
+            if (isHeadline)
+            {
+                label.font = WidgetsFactory.instance.headlineFont;
+                label.textColor = Color.white;
+            }
+            else
+            {
+                label.font = WidgetsFactory.instance.textFont;
+                label.textColor = new Color32(185, 221, 254, 255);
+            }
+            return label;
+        }
+
+        public static UICheckBox AddCheckBox<T>(UIComponent parent, string text, T userData, PropertyChangedEventHandler<bool> OnCheckChanged = null, string name = "CheckBox")
+        {
+            var checkbox = parent.AddUIComponent<UICheckBox>();
+            checkbox.name = name;
+            checkbox.height = 20;
+            checkbox.width = 100;
+            checkbox.objectUserData = userData;
+            if (OnCheckChanged != null)
+                checkbox.eventCheckChanged += OnCheckChanged;
+
+            var label = AddLabel(checkbox, text, false);
+            checkbox.label = label;
+            label.name = "Label";
+            label.size = new Vector2(75, 20);
+            label.relativePosition = new Vector3(22f, 2f);
+            checkbox.label = label;
+
+            var sprite = checkbox.AddUIComponent<UISprite>();
+            sprite.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left;
+            sprite.spriteName = CommonSpriteNames.CheckBoxUnchecked;
+            sprite.size = new Vector2(16f, 16f);
+            sprite.relativePosition = Vector3.zero;
+
+            var checkedSprite = checkbox.AddUIComponent<UISprite>();
+            checkedSprite.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left;
+            checkedSprite.spriteName = CommonSpriteNames.CheckBoxChecked;
+            checkedSprite.size = new Vector2(16f, 16f);
+            checkedSprite.relativePosition = Vector3.zero;
+            checkbox.checkedBoxObject = checkedSprite;
+
+            return checkbox;
+        }
+
+        public static UIPanel AddGroupedCheckBoxes<T>(UIComponent parent, KeyValuePair<string, T>[] textUserData, int padding = 5, bool alignVertically = true, PropertyChangedEventHandler<bool> OnCheckChanged = null, string namePrefix = "CheckBox")
+        {
+            UIPanel subPanel = parent.AddUIComponent<UIPanel>();
+            subPanel.name = "CheckBoxPanel";
+            //subPanel.autoLayout = true;
+            //subPanel.autoLayoutDirection = alignVertically ? LayoutDirection.Vertical : LayoutDirection.Horizontal;
+
+            var pos = new Vector3(0, 0);
+            foreach (var data in textUserData)
+            {
+                var checkBox = AddCheckBox(subPanel, data.Key, data.Value, OnCheckChanged, namePrefix + "-" + data.Key);
+                checkBox.group = subPanel;
+                checkBox.relativePosition = pos;
+                if (alignVertically)
+                {
+                    pos.y += checkBox.height + padding;
+                }
+                else
+                {
+                    pos.x += checkBox.width + padding;
+                }
+            }
+            //subPanel.autoFitChildrenHorizontally = true;
+            //subPanel.autoFitChildrenHorizontally = true;
+            return subPanel;
+        }
+
+        public static UISprite AddPanelIcon(UIPanel parent, string spriteName)
+        {
+            var icon = parent.AddUIComponent<UISprite>();
+            icon.name = "Icon";
+            icon.spriteName = spriteName;
+            icon.size = new Vector2(36, 36);
+            icon.relativePosition = new Vector3(13, 2);
+            icon.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left;
+            return icon;
+        }
+
+        public static UIButton AddPanelCloseButton(UIPanel parent)
+        {
+            var close = AddButton(parent, CommonSpriteNames.IconClose, "Close");
+            close.relativePosition = new Vector3(parent.width - close.width - 13, 2);
+            close.anchor = UIAnchorStyle.Top | UIAnchorStyle.Right;
+            close.eventClick += delegate
+            {
+                parent.Hide();
+            };
+            return close;
+        }
+
+        public static UIMultiStateButton AddMultistateButton(UIPanel parent, CommonSpriteNames.SpriteSet active, CommonSpriteNames.SpriteSet inactive, string name = "MultistateButton")
+        {
+            var button = parent.AddUIComponent<UIMultiStateButton>();
+            button.name = name;
+            button.size = new Vector2(32, 32);
+            button.textHorizontalAlignment = UIHorizontalAlignment.Center;
+            button.textVerticalAlignment = UIVerticalAlignment.Middle;
+            // background sprite states
+            var spriteSetList = new List<UIMultiStateButton.SpriteSet>();
+            spriteSetList.Add(inactive.ToMultiStateButtonSpriteSet(button));
+            spriteSetList.Add(active.ToMultiStateButtonSpriteSet(button));
+            var spriteSetState = new UIMultiStateButton.SpriteSetState();
+            Traverse.Create(spriteSetState).Field<List<UIMultiStateButton.SpriteSet>>("m_SpriteSetStates").Value = spriteSetList;
+            Traverse.Create(button).Field<UIMultiStateButton.SpriteSetState>("m_BackgroundSprites").Value = spriteSetState;
+
+            // foreground sprite states; even when we not intend to show sprites in foreground, both lists must have equal list lengths
+            spriteSetList = new List<UIMultiStateButton.SpriteSet>();
+            spriteSetList.Add(new UIMultiStateButton.SpriteSet());
+            spriteSetList.Add(new UIMultiStateButton.SpriteSet());
+            spriteSetState = new UIMultiStateButton.SpriteSetState();
+            Traverse.Create(spriteSetState).Field<List<UIMultiStateButton.SpriteSet>>("m_SpriteSetStates").Value = spriteSetList;
+            Traverse.Create(button).Field<UIMultiStateButton.SpriteSetState>("m_ForegroundSprites").Value = spriteSetState;
+            return button;
+        }
+
+        public static UIDragHandle AddPanelDragHandle(UIPanel parent)
+        {
+            var drag = parent.AddUIComponent<UIDragHandle>();
+            drag.name = "DragHandle";
+            drag.size = new Vector2(parent.width, 40);
+            drag.relativePosition = Vector3.zero;
+            drag.anchor = UIAnchorStyle.Top | UIAnchorStyle.Right | UIAnchorStyle.Left;
+            return drag;
+        }
+
+        public static UITextField AddTextField(UIComponent parent, string text = "", bool headline = false)
+        {
+            var textfield = parent.AddUIComponent<UITextField>();
+            textfield.name = "TextField";
+            textfield.text = text;
+            textfield.horizontalAlignment = UIHorizontalAlignment.Center;
+            textfield.verticalAlignment = UIVerticalAlignment.Middle;
+            textfield.textScale = 1f;
+            if (headline)
+            {
+                textfield.font = WidgetsFactory.instance.headlineFont;
+                textfield.textColor = Color.white;
+            }
+            else
+            {
+                textfield.font = WidgetsFactory.instance.textFont;
+                textfield.textColor = new Color32(185, 221, 254, 255);
+            }
+            textfield.multiline = false;
+            textfield.readOnly = false;
+            textfield.cursorBlinkTime = 0.45f;
+            textfield.cursorWidth = 1;
+            textfield.selectionSprite = CommonSpriteNames.EmptySprite;
+            textfield.focusedBgSprite = CommonSpriteNames.TextField.focused;
+            textfield.hoveredBgSprite = CommonSpriteNames.TextField.hovered;
+            textfield.selectionBackgroundColor = new Color32(233, 201, 148, 255);
+            textfield.allowFloats = false;
+            textfield.numericalOnly = false;
+            textfield.allowNegative = false;
+            textfield.isPasswordField = false;
+            textfield.builtinKeyNavigation = true;
+            textfield.padding = new RectOffset(0, 0, 9, 3);
+            return textfield;
+        }
+
+        public static UIScrollablePanel AddScrollablePanel(UIComponent parent, bool vertical = true)
+        {
+            var scrollabel = parent.AddUIComponent<UIScrollablePanel>();
+            scrollabel.autoLayout = true;
+            scrollabel.autoLayoutPadding = new RectOffset(5, 5, 1, 0);
+            if (vertical)
+            {
+                scrollabel.autoLayoutDirection = LayoutDirection.Vertical;
+                scrollabel.scrollWheelDirection = UIOrientation.Vertical;
+            }
+            else
+            {
+                scrollabel.autoLayoutDirection = LayoutDirection.Horizontal;
+                scrollabel.scrollWheelDirection = UIOrientation.Horizontal;
+            }
+            scrollabel.clipChildren = true;
+            //scrollabel.backgroundSprite = "MenuPanel2";
+            scrollabel.name = "ScrollablePanel";
+            scrollabel.scrollWheelAmount = 38;
+            scrollabel.builtinKeyNavigation = true;
+            scrollabel.anchor = UIAnchorStyle.All;
+            return scrollabel;
+        }
+
+        public static int DefaultVScrollbarWidth => 21;
+
+        public static UIScrollbar AddVerticalScrollbar(UIComponent parent, UIScrollablePanel scrollabelPanel)
+        {
+            var scrollbar = parent.AddUIComponent<UIScrollbar>();
+            scrollbar.size = new Vector2(DefaultVScrollbarWidth, scrollabelPanel.height);
+            scrollbar.relativePosition = new Vector3(scrollabelPanel.relativePosition.x + scrollabelPanel.width + 1, scrollabelPanel.relativePosition.y);
+            scrollbar.anchor = UIAnchorStyle.Right | UIAnchorStyle.Top | UIAnchorStyle.Bottom;
+            scrollbar.name = "Scrollbar";
+            scrollbar.orientation = UIOrientation.Vertical;
+            scrollbar.autoHide = false;
+            scrollbar.incrementAmount = 38;
+            scrollbar.stepSize = 1;
+            var scrollbarTrack = scrollbar.AddUIComponent<UISlicedSprite>();
+            scrollbarTrack.name = "Track";
+            scrollbarTrack.spriteName = CommonSpriteNames.ScrollbarTrack;
+            scrollbarTrack.relativePosition = Vector3.zero;
+            scrollbarTrack.size = scrollbar.size;
+            scrollbarTrack.anchor = UIAnchorStyle.All;
+            scrollbar.trackObject = scrollbarTrack;
+            var scrollbarThumb = scrollbarTrack.AddUIComponent<UISlicedSprite>();
+            scrollbarThumb.name = "Thumb";
+            scrollbarThumb.spriteName = CommonSpriteNames.ScrollbarThumb;
+            scrollbarThumb.width = scrollbar.width - 6;
+            scrollbar.thumbObject = scrollbarThumb;
+            scrollabelPanel.verticalScrollbar = scrollbar;
+            return scrollbar;
+        }
     }
 
     public static class UIUtils
