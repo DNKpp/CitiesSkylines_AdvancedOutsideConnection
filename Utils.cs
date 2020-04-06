@@ -4,8 +4,25 @@ using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
+    public delegate void OutsideConnectionPropertyChanged<T>(ushort buildingID, T value);
+    public delegate void DetailsOpenEventHandler(ushort buildingID);
     public static class Utils
     {
+        public static TransportInfo QueryTransportInfo(ushort buildingID)
+        {
+            return QueryBuildingAI(buildingID)?.GetTransportLineInfo();
+        }
+
+        public static BuildingAI QueryBuildingAI(ushort buildingID)
+        {
+            return QueryBuilding(buildingID).Info.m_buildingAI;
+        }
+
+        public static Building QueryBuilding(ushort buildingID)
+        {
+            return BuildingManager.instance.m_buildings.m_buffer[buildingID];
+        }
+
         public static T MaxEnumValue<E, T>()
         {
             return Enum.GetValues(typeof(E)).Cast<T>().Max();
