@@ -58,10 +58,12 @@
   <ItemGroup>
     <Compile Include="HarmonyPatches\OutsideConnectionGenerateName.cs" />
     <Compile Include="Mod.cs" />
+    <Compile Include="OutsideConnectionDetailPanel.cs" />
     <Compile Include="OutsideConnectionInfo.cs" />
     <Compile Include="OutsideConnectionSettings.cs" />
     <Compile Include="OverviewPanelExtension.cs" />
     <Compile Include="SerializableDataExtension.cs" />
+    <Compile Include="TableRowComponent.cs" />
     <Compile Include="UIUtils.cs" />
     <Compile Include="LoadingExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
