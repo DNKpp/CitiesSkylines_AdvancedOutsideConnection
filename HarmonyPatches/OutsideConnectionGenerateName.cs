@@ -18,9 +18,9 @@ namespace AdvancedOutsideConnection.HarmonyPatches
                 {
                     case OutsideConnectionSettings.NameModeType.CustomSingle:
                         {
-                            if (setting.NameText.Count != 0)
+                            if (setting.SingleGenerationName != string.Empty)
                             {
-                                __result = setting.NameText[0];
+                                __result = setting.SingleGenerationName;
                                 return false;
                             }
                             break;
@@ -28,10 +28,10 @@ namespace AdvancedOutsideConnection.HarmonyPatches
 
                     case OutsideConnectionSettings.NameModeType.CustomRandom:
                         {
-                            if (setting.NameText.Count != 0)
+                            if (setting.RandomGenerationNames.Count != 0)
                             {
                                 Randomizer r = new Randomizer(caller.Index);
-                                __result = setting.NameText[r.Int32((uint)setting.NameText.Count)];
+                                __result = setting.RandomGenerationNames[r.Int32((uint)setting.RandomGenerationNames.Count)];
                                 return false;
                             }
                             break;
