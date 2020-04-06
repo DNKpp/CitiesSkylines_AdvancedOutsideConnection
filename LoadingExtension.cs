@@ -74,25 +74,27 @@ namespace AdvancedOutsideConnection
 
             // This is needed in cases where the mod is hot reloaded. Due to its implementation, the SerializableDataExtension OnCreated function will only be called during game loads.
             // This way we manually force the call, so we can relay on correct behavior afterwards.
+            // Fails unfortunatly OnSave. Don't know whats going wrong.
 #if DEBUG
             if (late)
             {
+                Utils.Log("LoadingExtension Init late.");
                 var serDataWrapper = SimulationManager.instance.m_SerializableDataWrapper;
                 if (serDataWrapper != null)
                 {
-                    var serializableDataExtensions = Traverse.Create<SerializableDataExtension>().Field("m_SerializableDataExtensions").GetValue<List<ISerializableDataExtension>>();
-                    serializableDataExtensions = PluginManager.instance.GetImplementations<ISerializableDataExtension>();
+                    var serializableDataExtensions = PluginManager.instance.GetImplementations<ISerializableDataExtension>();
+                    Utils.Log("serializableDataExtensions count: " + serializableDataExtensions.Count);
                     foreach (var extension in serializableDataExtensions)
                     {
                         var own = extension as SerializableDataExtension;
-                        if (own != null)
-                            own.OnCreated(serDataWrapper);
+                        own?.OnCreated(serDataWrapper);
                     }
+                    Traverse.Create(serDataWrapper).Field<List<ISerializableDataExtension>>("m_SerializableDataExtensions").Value = serializableDataExtensions;
                 }
             }
 #endif
             SerializableDataExtension.instance.Loaded = true;
-
+ 
             var outConMgr = OutsideConnectionSettingsManager.instance;
             outConMgr.Init();
             outConMgr.SyncWithBuildingManager();
@@ -107,6 +109,7 @@ namespace AdvancedOutsideConnection
         {
             try
             {
+                Utils.Log("LoadingExtension Deinit.");
                 m_HarmonyInstance.UnpatchAll(m_HarmonyIdentifier);
 
                 SerializableDataExtension.instance.Loaded = false;
