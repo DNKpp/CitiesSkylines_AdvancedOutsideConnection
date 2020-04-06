@@ -16,6 +16,8 @@ namespace AdvancedOutsideConnection
         private UIResizeHandle m_BottomResizeHandle = null;
         private static readonly string m_MainPanelName = "AOCMainPanel";
 
+        OutsideConnectionDetailPanel m_OutsideConnectionDetailPanel = null;
+
         private int m_LastOutsideConnectionCount = 0;
 
         private bool m_Initialized = false;
@@ -35,6 +37,9 @@ namespace AdvancedOutsideConnection
 
             if (m_MainPanel)
                 UnityEngine.Object.Destroy(m_MainPanel);
+
+            if (m_OutsideConnectionDetailPanel)
+                UnityEngine.Object.Destroy(m_OutsideConnectionDetailPanel.gameObject);
         }
 
         private void OnEnable()
@@ -46,6 +51,7 @@ namespace AdvancedOutsideConnection
             m_MainPanel = UIView.Find<UIPanel>(m_MainPanelName);
             if (m_MainPanel)
             {
+                UnityEngine.Object.Destroy(m_MainPanel.gameObject);
                 UnityEngine.Object.Destroy(m_MainPanel);
                 m_MainPanel = null;
 
@@ -54,28 +60,19 @@ namespace AdvancedOutsideConnection
 #endif
             var objectOfType = UnityEngine.Object.FindObjectOfType<UIView>();
             transform.parent = objectOfType.transform;
-            m_MainPanel = gameObject.AddComponent<UIPanel>();
 
-            var infoPanel = UIView.Find<UIPanel>(UIUtils.OutgoingConnectionInfoViewPanelName);
-            var outConsInfoViewPanel = infoPanel.GetComponent<OutsideConnectionsInfoViewPanel>();
-
-            m_MainPanel.name = m_MainPanelName;
+            m_MainPanel = WidgetsFactory.MakeMainPanel(gameObject, m_MainPanelName, new Vector2(500, 700));
             m_MainPanel.relativePosition = new Vector3(359f, 0f);
-            m_MainPanel.size = new Vector2(500, 700);
-            m_MainPanel.backgroundSprite = infoPanel.backgroundSprite;
             m_MainPanel.minimumSize = new Vector2(m_MainPanel.width, 150);
 
             m_OutsideConnectionCountLabel = m_MainPanel.AddUIComponent<UILabel>();
             m_OutsideConnectionCountLabel.font = WidgetsFactory.instance.textFont;
             m_OutsideConnectionCountLabel.textScale = 1;
             m_OutsideConnectionCountLabel.name = "OutsideConnectionCount";
+            m_OutsideConnectionCountLabel.prefix = "Outside Connections-Count: ";
             m_OutsideConnectionCountLabel.anchor = UIAnchorStyle.Left | UIAnchorStyle.Bottom;
 
-            m_BottomResizeHandle = UIUtils.MakeCopy(WidgetsFactory.instance.verticalResizeHandle, m_MainPanel);
-            m_BottomResizeHandle.size = new Vector2(m_MainPanel.width, 35);
-            m_BottomResizeHandle.relativePosition = new Vector3(0, m_MainPanel.height - m_BottomResizeHandle.height);
-            m_BottomResizeHandle.anchor = UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.Bottom;
-            m_BottomResizeHandle.edges = UIResizeHandle.ResizeEdge.Bottom;
+            m_BottomResizeHandle = WidgetsFactory.AddPanelBottomResizeHandle(m_MainPanel);
             m_OutsideConnectionCountLabel.relativePosition = m_BottomResizeHandle.relativePosition + new Vector3(10, 10);
 
             m_Caption = WidgetsFactory.AddCaption(m_MainPanel, "Advanced Outside Connections Overview");
@@ -83,43 +80,16 @@ namespace AdvancedOutsideConnection
 
             SetupOutsideConnectionTitle();
 
-            m_ScrollablePanel = m_MainPanel.AddUIComponent<UIScrollablePanel>();
+            m_ScrollablePanel = WidgetsFactory.AddScrollablePanel(m_MainPanel);
             m_ScrollablePanel.relativePosition = new Vector3(0, 85);
-            m_ScrollablePanel.autoLayout = true;
-            m_ScrollablePanel.autoLayoutPadding = new RectOffset(5, 5, 1, 0);
-            m_ScrollablePanel.autoLayoutDirection = LayoutDirection.Vertical;
-            m_ScrollablePanel.clipChildren = true;
-            m_ScrollablePanel.name = "ScrollablePanel";
-            m_ScrollablePanel.scrollWheelDirection = UIOrientation.Vertical;
-            m_ScrollablePanel.scrollWheelAmount = 38;
-            //m_ScrollablePanel.useTouchMouseScroll = true;
-            m_ScrollablePanel.builtinKeyNavigation = true;
+            m_ScrollablePanel.width = m_MainPanel.width -WidgetsFactory.DefaultVScrollbarWidth - 1;
             m_ScrollablePanel.height = m_MainPanel.height - m_ScrollablePanel.relativePosition.y - m_BottomResizeHandle.height;
-            m_ScrollablePanel.anchor = UIAnchorStyle.All;
 
-            m_Scrollbar = m_MainPanel.AddUIComponent<UIScrollbar>();
-            m_Scrollbar.size = new Vector2(21, m_ScrollablePanel.height);
-            m_Scrollbar.relativePosition = new Vector3(m_MainPanel.width - m_Scrollbar.width - 5, m_ScrollablePanel.relativePosition.y);
-            m_Scrollbar.anchor = UIAnchorStyle.Right | UIAnchorStyle.Top | UIAnchorStyle.Bottom;
-            m_Scrollbar.name = "Scrollbar";
-            m_Scrollbar.orientation = UIOrientation.Vertical;
-            m_Scrollbar.autoHide = false;
-            m_Scrollbar.incrementAmount = 38;
-            m_Scrollbar.stepSize = 1;
-            var scrollbarTrack = m_Scrollbar.AddUIComponent<UISlicedSprite>();
-            scrollbarTrack.name = "Track";
-            scrollbarTrack.spriteName = "ScrollbarTrack";
-            scrollbarTrack.relativePosition = Vector3.zero;
-            scrollbarTrack.size = m_Scrollbar.size;
-            scrollbarTrack.anchor = UIAnchorStyle.All;
-            m_Scrollbar.trackObject = scrollbarTrack;
-            var scrollbarThumb = scrollbarTrack.AddUIComponent<UISlicedSprite>();
-            scrollbarThumb.name = "Thumb";
-            scrollbarThumb.spriteName = "ScrollbarThumb";
-            scrollbarThumb.width = m_Scrollbar.width - 6;
-            m_Scrollbar.thumbObject = scrollbarThumb;
-            m_ScrollablePanel.verticalScrollbar = m_Scrollbar;
-            m_ScrollablePanel.width = m_Scrollbar.relativePosition.x;
+            m_Scrollbar = WidgetsFactory.AddVerticalScrollbar(m_MainPanel, m_ScrollablePanel);
+
+            var detailPanelGO = new GameObject("AOCDetailMainPanelGO", new Type[] { typeof(OutsideConnectionDetailPanel) });
+            m_OutsideConnectionDetailPanel = detailPanelGO.GetComponent<OutsideConnectionDetailPanel>();
+            m_OutsideConnectionDetailPanel.eventNameChanged += OnConnectionNameChanged;
 
             m_Initialized = true;
         }
@@ -140,7 +110,7 @@ namespace AdvancedOutsideConnection
 
             OutsideConnectionSettingsManager.instance.SyncWithBuildingManager();
 
-            var outsideConnectionCount = OutsideConnectionSettingsManager.instance.SettingsDict.Count;
+            var outsideConnectionCount = 0;
             foreach (var element in OutsideConnectionSettingsManager.instance.SettingsDict)
             {
                 OutsideConnectionInfo outsideConnectionInfo;
@@ -149,6 +119,8 @@ namespace AdvancedOutsideConnection
                     var gameObject = new GameObject("AOCOutsideConnectionInfo", new System.Type[] { typeof(OutsideConnectionInfo) });
                     outsideConnectionInfo = gameObject.GetComponent<OutsideConnectionInfo>();
                     outsideConnectionInfo.component.width = m_ScrollablePanel.width - 5;
+                    outsideConnectionInfo.eventDetailsOpen += OnDetailsOpened;
+                    outsideConnectionInfo.eventNameChanged += OnConnectionNameChanged;
                     m_ScrollablePanel.AttachUIComponent(gameObject);
                 }
                 else
@@ -156,10 +128,12 @@ namespace AdvancedOutsideConnection
                     outsideConnectionInfo = m_ScrollablePanel.components[outsideConnectionCount].GetComponent<OutsideConnectionInfo>();
                 }
                 outsideConnectionInfo.buildingID = element.Key;
+                ++outsideConnectionCount;
             }
 
-            m_OutsideConnectionCountLabel.text = "Outside Connections-Count: " + m_ScrollablePanel.components.Count;
+            m_OutsideConnectionCountLabel.text = m_ScrollablePanel.components.Count.ToString();
 
+            m_CurSortCriterion = SortCriterion.DEFAULT;
             OnTransportTypeSort();
         }
 
@@ -213,9 +187,15 @@ namespace AdvancedOutsideConnection
             Sort(SortCriterion.TRANSPORT_TYPE,
                 (UIComponent lhs, UIComponent rhs) =>
                 {
-                    var lhsSettings = lhs.GetComponent<OutsideConnectionInfo>().currentSettings;
-                    var rhsSettings = rhs.GetComponent<OutsideConnectionInfo>().currentSettings;
-                    var value = lhsSettings.Type - rhsSettings.Type;
+                    if (lhs == null || lhs == null)
+                        return 0;
+
+                    var lhsComponent = lhs.GetComponent<OutsideConnectionInfo>();
+                    var rhsComponent = rhs.GetComponent<OutsideConnectionInfo>();
+                    if (lhsComponent == null || rhsComponent == null || lhsComponent.buildingID == 0 || rhsComponent.buildingID == 0)
+                        return 0;
+
+                    var value = Utils.QueryTransportInfo(lhsComponent.buildingID).m_transportType - Utils.QueryTransportInfo(rhsComponent.buildingID).m_transportType;
                     if (value != 0)
                         return m_InverseSort ? -value : value;
                     return CompareNames(lhs, rhs);
@@ -247,10 +227,49 @@ namespace AdvancedOutsideConnection
 
         private int CompareNames(UIComponent lhs, UIComponent rhs)
         {
+            if (lhs == null || lhs == null)
+                return 0;
+
             var lhsSettings = lhs.GetComponent<OutsideConnectionInfo>().currentSettings;
             var rhsSettings = rhs.GetComponent<OutsideConnectionInfo>().currentSettings;
+            if (lhsSettings == null || rhsSettings == null)
+                return 0;
+
             var value = OverviewPanelBase.NaturalCompare(lhsSettings.Name, rhsSettings.Name);
             return m_InverseSort ? -value : value;
+        }
+
+        private void OnDetailsOpened(ushort buildingID)
+        {
+            if (m_OutsideConnectionDetailPanel.component.isVisible && m_OutsideConnectionDetailPanel.buildingID == buildingID)
+            {
+                m_OutsideConnectionDetailPanel.component.Hide();
+            }
+            else
+            {
+                m_OutsideConnectionDetailPanel.ChangeTarget(buildingID);
+                m_OutsideConnectionDetailPanel.component.Show();
+            }
+        }
+
+        private void OnConnectionNameChanged(ushort buildingID, string newName)
+        {
+            if (buildingID == 0)
+                return;
+
+
+            if (m_OutsideConnectionDetailPanel.buildingID == buildingID)
+                m_OutsideConnectionDetailPanel.RefreshData();
+
+            foreach (var rowPanel in m_ScrollablePanel.components)
+            {
+                var infoPanel = rowPanel.gameObject.GetComponent<OutsideConnectionInfo>();
+                if (infoPanel != null && infoPanel.buildingID == buildingID)
+                {
+                    infoPanel.RefreshData();
+                    return;
+                }
+            }
         }
     }
 }
