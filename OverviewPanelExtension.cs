@@ -65,9 +65,7 @@ namespace AdvancedOutsideConnection
             m_MainPanel.relativePosition = new Vector3(359f, 0f);
             m_MainPanel.minimumSize = new Vector2(m_MainPanel.width, 150);
 
-            m_OutsideConnectionCountLabel = m_MainPanel.AddUIComponent<UILabel>();
-            m_OutsideConnectionCountLabel.font = WidgetsFactory.instance.textFont;
-            m_OutsideConnectionCountLabel.textScale = 1;
+            m_OutsideConnectionCountLabel = WidgetsFactory.AddLabel(m_MainPanel, "", true, "NameGenerationRandomCountLabel");
             m_OutsideConnectionCountLabel.name = "OutsideConnectionCount";
             m_OutsideConnectionCountLabel.prefix = "Outside Connections-Count: ";
             m_OutsideConnectionCountLabel.anchor = UIAnchorStyle.Left | UIAnchorStyle.Bottom;

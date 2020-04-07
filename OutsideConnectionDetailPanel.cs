@@ -198,7 +198,7 @@ namespace AdvancedOutsideConnection
 
             m_RandomNameCountLabel = WidgetsFactory.AddLabel(m_MainPanel, "", true, "NameGenerationRandomCountLabel");
             m_RandomNameCountLabel.relativePosition = m_BottomResizeHandle.relativePosition + new Vector3(10, 10);
-            m_RandomNameCountLabel.anchor = UIAnchorStyle.Bottom | UIAnchorStyle.Left | UIAnchorStyle.Right;
+            m_RandomNameCountLabel.anchor = UIAnchorStyle.Bottom | UIAnchorStyle.Left;
             m_RandomNameCountLabel.prefix = "Random Names-Count: ";
             int oldZ = m_RandomNameCountLabel.zOrder;
             m_RandomNameCountLabel.zOrder = m_BottomResizeHandle.zOrder;
