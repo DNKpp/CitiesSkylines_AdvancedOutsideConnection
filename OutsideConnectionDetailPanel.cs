@@ -76,6 +76,7 @@ namespace AdvancedOutsideConnection
         private UILabel m_TransportTypeLabel = null;
 
         private bool m_Initialized = false;
+        private bool m_IsRefreshing = false;
 
         private static readonly string m_MainPanelName = "AOC_DetailMainPanel";
 
@@ -175,12 +176,13 @@ namespace AdvancedOutsideConnection
 
             m_LocationMarkerButton.eventClick += OnLocationMarkerClicked;
             m_MainPanel.eventVisibilityChanged += OnVisibilityChanged;
-            m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newText)
+            m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newName)
             {
-                if (m_CachedSettings != null && m_CachedSettings.Name != newText)
+                if (m_CachedSettings != null)
                 {
-                    m_CachedSettings.Name = newText;
-                    eventNameChanged?.Invoke(m_BuildingID, newText);
+                    //Utils.SetBuildingName(buildingID, newName);
+                    //StartCoroutine(Utils.SetBuildingName(buildingID, newName, this));
+                    eventNameChanged?.Invoke(m_BuildingID, newName);
                 }
             };
         }
@@ -256,7 +258,7 @@ namespace AdvancedOutsideConnection
 
         private void OnDirectionCheckboxChanged(UIComponent component, bool isChecked)
         {
-            if (m_BuildingID == 0 || m_CachedSettings == null)
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
                 return;
 
             var buildingFlags = Utils.QueryBuilding(m_BuildingID).m_flags;
@@ -279,7 +281,7 @@ namespace AdvancedOutsideConnection
 
         private void OnSingleNameSubmitted(UIComponent component, string text)
         {
-            if (m_BuildingID == 0 || m_CachedSettings == null)
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
                 return;
 
             m_CachedSettings.SingleGenerationName = text;
@@ -287,7 +289,7 @@ namespace AdvancedOutsideConnection
 
         private void OnNameGenerationModeChanged(UIComponent component, bool isChecked)
         {
-            if (!isChecked || m_BuildingID == 0 || m_CachedSettings == null)
+            if (m_IsRefreshing || !isChecked || m_BuildingID == 0 || m_CachedSettings == null)
                 return;
 
             var checkbox = component as UICheckBox;
@@ -325,13 +327,15 @@ namespace AdvancedOutsideConnection
 
         public void RefreshData()
         {
-            if (m_CachedSettings == null)
+            if (m_BuildingID == 0 || m_CachedSettings == null)
                 return;
+
+            m_IsRefreshing = true;
 
             var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
             var building = Utils.QueryBuilding(m_BuildingID);
             m_PanelIcon.spriteName = CommonSpriteNames.SubBarPublicTransport[(int)transportInfo.m_transportType];
-            m_ConnectionNameTextfield.text = m_CachedSettings.Name;
+            m_ConnectionNameTextfield.text = BuildingManager.instance.GetBuildingName(m_BuildingID, InstanceID.Empty);
             m_TransportTypeLabel.text = transportInfo.m_transportType.ToString();
             m_DirectionInCheckbox.isChecked = (building.m_flags & Building.Flags.Incoming) != 0;
             m_DirectionInCheckbox.readOnly = (m_CachedSettings.OriginalDirectionFlags & Building.Flags.Incoming) == 0;
@@ -382,6 +386,8 @@ namespace AdvancedOutsideConnection
             lastComponent.EnableDelete(false);
 
             m_RandomNameCountLabel.text = (m_RandomNameContainer.components.Count - 1).ToString();
+
+            m_IsRefreshing = false;
         }
 
         private void OnRandomGenerationNameDeleted(UIComponent comp, UIMouseEventParameter mouseParam)
@@ -406,6 +412,9 @@ namespace AdvancedOutsideConnection
 
         private void OnRandomGenerationNameSubmitted(UIComponent comp, string newText)
         {
+            if (m_IsRefreshing)
+                return;
+
             int i = 0;
             foreach (var panel in m_RandomNameContainer.components)
             {

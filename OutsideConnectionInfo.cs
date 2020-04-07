@@ -14,6 +14,8 @@ namespace AdvancedOutsideConnection
         private OutsideConnectionSettings m_CachedSettings = null;
         public OutsideConnectionSettings currentSettings => m_CachedSettings;
 
+        private bool m_IsRefreshing = true;
+
         private new void Awake()
         {
             m_MainPanel = gameObject.AddComponent<UIPanel>();
@@ -31,13 +33,10 @@ namespace AdvancedOutsideConnection
             m_ConnectionNameTextfield.size = new Vector2(175, 35);
             m_ConnectionNameTextfield.relativePosition = new Vector3(75, 10);
             m_ConnectionNameTextfield.anchor = UIAnchorStyle.Right | UIAnchorStyle.Left | UIAnchorStyle.CenterVertical;
-            m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newText)
+            m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newName)
             {
-                if (m_BuildingID != 0 && m_CachedSettings != null)
-                {
-                    m_CachedSettings.Name = newText;
-                    eventNameChanged?.Invoke(m_BuildingID, newText);
-                }
+                if (!m_IsRefreshing && m_BuildingID != 0)
+                    eventNameChanged?.Invoke(m_BuildingID, newName);
             };
 
             m_DetailViewButton = m_MainPanel.AddUIComponent<UIButton>();
@@ -89,11 +88,15 @@ namespace AdvancedOutsideConnection
             if (m_BuildingID == 0 || !OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(m_BuildingID, out m_CachedSettings))
                 return;
 
+            m_IsRefreshing = true;
+
             var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
             m_TransportTypeSprite.spriteName = CommonSpriteNames.SubBarPublicTransport[(int)transportInfo.m_transportType];
-            m_ConnectionNameTextfield.text = m_CachedSettings.Name;
+            m_ConnectionNameTextfield.text = BuildingManager.instance.GetBuildingName(m_BuildingID, InstanceID.Empty);
 
             m_DirectionLabel.text = Utils.GetStringForDirectionFlag(m_BuildingID);
+
+            m_IsRefreshing = false;
         }
 
         private void SetBuildingID(ushort id)

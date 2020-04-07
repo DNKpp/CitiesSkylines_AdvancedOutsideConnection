@@ -21,8 +21,6 @@ namespace AdvancedOutsideConnection
         public List<string> RandomGenerationNames { get; set; } = new List<string>();
         public string SingleGenerationName { get; set; } = "";
 
-        public string Name = "";
-
         public Building.Flags OriginalDirectionFlags;
     }
 
@@ -74,8 +72,9 @@ namespace AdvancedOutsideConnection
                 else
                 {
                     settings = new OutsideConnectionSettings();
-                    
-                    settings.Name = transportType.ToString() + "-Outside Connection " + (typeCount[(int)transportType] + 1);
+
+                    var name = transportType.ToString() + "-Outside Connection " + (typeCount[(int)transportType] + 1);
+                    Utils.AsyncSetBuildingName(buildingID, name);
                     var building = Utils.QueryBuilding(buildingID);
                     settings.OriginalDirectionFlags = building.m_flags & Building.Flags.IncomingOutgoing;
                     m_SettingsDict.Add(buildingID, settings);
@@ -104,7 +103,6 @@ namespace AdvancedOutsideConnection
                         SerializableDataExtension.WriteString(str, buffer);
                     }
 
-                    SerializableDataExtension.WriteString(keyValue.Value.Name, buffer);
                     SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.OriginalDirectionFlags, buffer);
                 }
                 SerializableDataExtension.instance.SerializableData.SaveData(_dataID, buffer.ToArray());
@@ -166,7 +164,6 @@ namespace AdvancedOutsideConnection
                     settings.RandomGenerationNames.Add(SerializableDataExtension.ReadString(buffer, ref index));
                 }
 
-                settings.Name = SerializableDataExtension.ReadString(buffer, ref index);
                 settings.OriginalDirectionFlags = (Building.Flags)SerializableDataExtension.ReadUInt16(buffer, ref index);
 
                 settingsDict.Add(buildingID, settings);

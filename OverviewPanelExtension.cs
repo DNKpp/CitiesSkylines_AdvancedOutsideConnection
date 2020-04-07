@@ -1,12 +1,18 @@
 ﻿using ColossalFramework.UI;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
     class OverviewPanelExtension : OverviewPanelBase
     {
+        class NameChangeTaskData
+        {
+            public ushort buildingID;
+            public AsyncTask<bool> task;
+        }
+        NameChangeTaskData m_AsyncNameChangeTaskData = null;
+
         private UIPanel m_MainPanel = null;
         private UIPanel m_Caption = null;
         private UIScrollablePanel m_ScrollablePanel = null;
@@ -66,7 +72,6 @@ namespace AdvancedOutsideConnection
             transform.parent = objectOfType.transform;
 
             m_MainPanel = WidgetsFactory.MakeMainPanel(gameObject, m_MainPanelName, new Vector2(500, 700));
-            //m_MainPanel.position = new Vector3(359f, 0f);
             m_MainPanel.minimumSize = new Vector2(m_MainPanel.width, 150);
 
             m_OutsideConnectionCountLabel = WidgetsFactory.AddLabel(m_MainPanel, "", true, "NameGenerationRandomCountLabel");
@@ -140,11 +145,19 @@ namespace AdvancedOutsideConnection
                 RefreshOutsideConnections();
                 m_LastOutsideConnectionCount = BuildingManager.instance.GetOutsideConnections().m_size;
             }
+
+            if (m_AsyncNameChangeTaskData != null && m_AsyncNameChangeTaskData.task.completed)
+            {
+                if (m_OutsideConnectionDetailPanel.buildingID == m_AsyncNameChangeTaskData.buildingID)
+                    m_OutsideConnectionDetailPanel.RefreshData();
+
+                OnConnectionInfoChanged(m_AsyncNameChangeTaskData.buildingID);
+                m_AsyncNameChangeTaskData = null;
+            }
         }
 
         private void OnOutsideConnectionInfoViewPanelVisibilityChanged(UIComponent comp, bool isVisible)
         {
-            Utils.Log("Visibility changed");
             if (isVisible)
                 OnShow();
             else
@@ -341,12 +354,15 @@ namespace AdvancedOutsideConnection
             if (lhs == null || lhs == null)
                 return 0;
 
-            var lhsSettings = lhs.GetComponent<OutsideConnectionInfo>().currentSettings;
-            var rhsSettings = rhs.GetComponent<OutsideConnectionInfo>().currentSettings;
-            if (lhsSettings == null || rhsSettings == null)
+            var lhsComponent = lhs.GetComponent<OutsideConnectionInfo>();
+            var rhsComponent = rhs.GetComponent<OutsideConnectionInfo>();
+            if (lhsComponent == null || rhsComponent == null)
                 return 0;
 
-            var value = OverviewPanelBase.NaturalCompare(lhsSettings.Name, rhsSettings.Name);
+            var buildingMgr = BuildingManager.instance;
+            var lhsName = buildingMgr.GetBuildingName(lhsComponent.buildingID, InstanceID.Empty);
+            var rhsName = buildingMgr.GetBuildingName(rhsComponent.buildingID, InstanceID.Empty);
+            var value = OverviewPanelBase.NaturalCompare(lhsName, rhsName);
             return m_InverseSort ? -value : value;
         }
 
@@ -374,10 +390,8 @@ namespace AdvancedOutsideConnection
             if (buildingID == 0)
                 return;
 
-            if (m_OutsideConnectionDetailPanel.buildingID == buildingID)
-                m_OutsideConnectionDetailPanel.RefreshData();
-
-            OnConnectionInfoChanged(buildingID);
+            var task = Utils.AsyncSetBuildingName(buildingID, name);
+            m_AsyncNameChangeTaskData = new NameChangeTaskData{ buildingID = buildingID, task = task };
         }
 
         private void OnConnectionInfoChanged(ushort buildingID)

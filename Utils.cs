@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ColossalFramework;
+using System;
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 
@@ -8,6 +10,16 @@ namespace AdvancedOutsideConnection
     public delegate void DetailsOpenEventHandler(ushort buildingID);
     public static class Utils
     {
+        public static AsyncTask<bool> AsyncSetBuildingName(ushort buildingID, string name)
+        {
+            if (SimulationManager.exists && buildingID != 0)
+            {
+                AsyncTask<bool> task = SimulationManager.instance.AddAction(BuildingManager.instance.SetBuildingName(buildingID, name));
+                return task;
+            }
+            return null;
+        }
+
         public static TransportInfo QueryTransportInfo(ushort buildingID)
         {
             return QueryBuildingAI(buildingID)?.GetTransportLineInfo();
