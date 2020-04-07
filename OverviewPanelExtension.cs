@@ -96,6 +96,10 @@ namespace AdvancedOutsideConnection
             var detailPanelGO = new GameObject("AOCDetailMainPanelGO", new Type[] { typeof(OutsideConnectionDetailPanel) });
             m_OutsideConnectionDetailPanel = detailPanelGO.GetComponent<OutsideConnectionDetailPanel>();
             m_OutsideConnectionDetailPanel.eventNameChanged += OnConnectionNameChanged;
+            m_OutsideConnectionDetailPanel.eventDirectionChanged += delegate (ushort buildingID, Building.Flags flag)
+            {
+                OnConnectionInfoChanged(buildingID);
+            };
 
             SetupEventsWithOutsideConnectionInfoViewPanel(true);
 
@@ -220,7 +224,7 @@ namespace AdvancedOutsideConnection
             m_OutsideConnectionTitle.autoLayoutDirection = LayoutDirection.Horizontal;
             m_OutsideConnectionTitle.autoLayoutPadding = new RectOffset(10, 15, 5, 5);
 
-            var titleButtons = new UIButton[2];
+            var titleButtons = new UIButton[3];
 
             titleButtons[0] = m_OutsideConnectionTitle.AddUIComponent<UIButton>();
             titleButtons[0].name = "TransportTypeButton";
@@ -242,12 +246,21 @@ namespace AdvancedOutsideConnection
             titleButtons[1].name = "NameTitle";
             titleButtons[1].text = "Connection Name";
             titleButtons[1].textHorizontalAlignment = UIHorizontalAlignment.Center;
-            titleButtons[1].size = new Vector2(240, 24);
+            titleButtons[1].size = new Vector2(235, 24);
             titleButtons[1].textScale = 1.0625f;
 
             titleButtons[1].eventClick += delegate
             {
                 OnNameSort();
+            };
+
+            titleButtons[2] = WidgetsFactory.AddButton(m_OutsideConnectionTitle, "Direction", "DirectionButton");
+            titleButtons[2].size = new Vector2(100, 24);
+            titleButtons[2].textScale = 1.0625f;
+
+            titleButtons[2].eventClick += delegate
+            {
+                OnDirectionSort();
             };
         }
 
@@ -281,6 +294,32 @@ namespace AdvancedOutsideConnection
                 return;
 
             Sort(SortCriterion.NAME, CompareNames);
+        }
+
+        private void OnDirectionSort()
+        {
+            if (!m_Initialized)
+                return;
+
+            Sort(SortCriterion.TRANSPORT_TYPE,
+                (UIComponent lhs, UIComponent rhs) =>
+                {
+                    if (lhs == null || lhs == null)
+                        return 0;
+
+                    var lhsComponent = lhs.GetComponent<OutsideConnectionInfo>();
+                    var rhsComponent = rhs.GetComponent<OutsideConnectionInfo>();
+                    if (lhsComponent == null || rhsComponent == null || lhsComponent.buildingID == 0 || rhsComponent.buildingID == 0)
+                        return 0;
+
+                    var lhsDir = Utils.QueryBuilding(lhsComponent.buildingID).m_flags & Building.Flags.IncomingOutgoing;
+                    var rhsDir = Utils.QueryBuilding(rhsComponent.buildingID).m_flags & Building.Flags.IncomingOutgoing;
+                    var value = lhsDir - rhsDir;
+                    if (value != 0)
+                        return m_InverseSort ? -value : value;
+                    return CompareNames(lhs, rhs);
+                }
+            );
         }
 
         private void Sort(SortCriterion criterion, Comparison<UIComponent> compare)
@@ -330,15 +369,19 @@ namespace AdvancedOutsideConnection
             }
         }
 
-        private void OnConnectionNameChanged(ushort buildingID, string newName)
+        private void OnConnectionNameChanged(ushort buildingID, string name)
         {
             if (buildingID == 0)
                 return;
 
-
             if (m_OutsideConnectionDetailPanel.buildingID == buildingID)
                 m_OutsideConnectionDetailPanel.RefreshData();
 
+            OnConnectionInfoChanged(buildingID);
+        }
+
+        private void OnConnectionInfoChanged(ushort buildingID)
+        {
             foreach (var rowPanel in m_ScrollablePanel.components)
             {
                 var infoPanel = rowPanel.gameObject.GetComponent<OutsideConnectionInfo>();

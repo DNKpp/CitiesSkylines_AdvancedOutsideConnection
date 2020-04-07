@@ -54,7 +54,7 @@ namespace AdvancedOutsideConnection
             public event MouseEventHandler eventDeleteClicked;
         }
 
-            private ushort m_BuildingID = 0;
+        private ushort m_BuildingID = 0;
         public ushort buildingID => m_BuildingID;
         private OutsideConnectionSettings m_CachedSettings = null;
         private UIPanel m_MainPanel = null;
@@ -69,6 +69,11 @@ namespace AdvancedOutsideConnection
         private UIScrollbar m_RandomNameContainerScrollbar = null;
         private UILabel m_RandomNameCountLabel = null;
         private UITextField m_SingleNameTextFrame = null;
+        private UIPanel m_SettingsPanel = null;
+        private UILabel m_DirectionLabel = null;
+        private UICheckBox m_DirectionInCheckbox = null;
+        private UICheckBox m_DirectionOutCheckbox = null;
+        private UILabel m_TransportTypeLabel = null;
 
         private bool m_Initialized = false;
 
@@ -109,6 +114,8 @@ namespace AdvancedOutsideConnection
             m_MainPanel.minimumSize = new Vector2(m_MainPanel.width, 150);
 
             InitCaptionArea();
+            InitSettingsPanel();
+
             m_BottomResizeHandle = WidgetsFactory.AddPanelBottomResizeHandle(m_MainPanel);
             InitNameGenerationPanel();
 
@@ -116,6 +123,40 @@ namespace AdvancedOutsideConnection
             m_MainPanel.Hide();
 
             m_Initialized = true;
+        }
+
+        private void InitSettingsPanel()
+        {
+            m_SettingsPanel = m_MainPanel.AddUIComponent<UIPanel>();
+            m_SettingsPanel.name = "SettingsPanel";
+            m_SettingsPanel.backgroundSprite = CommonSpriteNames.GenericPanel;
+            m_SettingsPanel.width = m_MainPanel.width - 10;
+            m_SettingsPanel.height = 100;
+            m_SettingsPanel.color = new Color32(206, 206, 206, 255);
+            m_SettingsPanel.relativePosition = new Vector3(5, m_PanelIcon.relativePosition.y + m_PanelIcon.height + 5);
+            m_SettingsPanel.anchor = UIAnchorStyle.Left | UIAnchorStyle.Top | UIAnchorStyle.Right;
+
+            m_TransportTypeLabel = WidgetsFactory.AddLabel(m_SettingsPanel, "", false, "TransportTypeLabel");
+            m_TransportTypeLabel.autoSize = true;
+            m_TransportTypeLabel.textScale = 0.7f;
+            m_TransportTypeLabel.relativePosition = new Vector3(10, 10);
+
+            m_DirectionLabel = WidgetsFactory.AddLabel(m_SettingsPanel, "", false, "DirectionLabel");
+            m_DirectionLabel.text = "Direction";
+            m_DirectionLabel.autoSize = false;
+            m_DirectionLabel.width = 100;
+            m_DirectionLabel.autoHeight = true;
+            m_DirectionLabel.textAlignment = UIHorizontalAlignment.Center;
+            m_DirectionLabel.textScale = 0.7f;
+            m_DirectionLabel.relativePosition = new Vector3(m_SettingsPanel.width - m_DirectionLabel.width - 10, 10);
+            //m_DirectionLabel.backgroundSprite = CommonSpriteNames.EmptySprite;
+
+            m_DirectionInCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "In", Building.Flags.Incoming, OnDirectionCheckboxChanged, "DirectionInCheckBox");
+            m_DirectionInCheckbox.relativePosition = m_DirectionLabel.relativePosition + new Vector3(0, 20);
+            m_DirectionInCheckbox.label.textScale = 0.7f;
+            m_DirectionOutCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "Out", Building.Flags.Outgoing, OnDirectionCheckboxChanged, "DirectionOutCheckBox");
+            m_DirectionOutCheckbox.relativePosition = m_DirectionInCheckbox.relativePosition + new Vector3(50, 0);
+            m_DirectionOutCheckbox.label.textScale = 0.7f;
         }
 
         private void InitCaptionArea()
@@ -213,6 +254,29 @@ namespace AdvancedOutsideConnection
             m_NameGenerationPanel.minimumSize = new Vector2(m_NameGenerationPanel.width, m_NameModeSubPanel.relativePosition.y + m_NameModeSubPanel.height);
         }
 
+        private void OnDirectionCheckboxChanged(UIComponent component, bool isChecked)
+        {
+            if (m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            var buildingFlags = Utils.QueryBuilding(m_BuildingID).m_flags;
+            var flag = (Building.Flags)(component as UICheckBox).objectUserData;
+
+            // do not allow to apply/remove flags, which weren't set in the original
+            if ((m_CachedSettings.OriginalDirectionFlags & flag) == 0)
+                return;
+            Utils.Log("flag before: " + buildingFlags);
+            if (isChecked)
+                buildingFlags |= flag;
+            else
+                buildingFlags &= ~flag;
+            Utils.Log("flag after: " + buildingFlags);
+
+            BuildingManager.instance.m_buildings.m_buffer[m_BuildingID].m_flags = buildingFlags;     // need to push back the copy
+
+            eventDirectionChanged?.Invoke(m_BuildingID, buildingFlags & Building.Flags.IncomingOutgoing);
+        }
+
         private void OnSingleNameSubmitted(UIComponent component, string text)
         {
             if (m_BuildingID == 0 || m_CachedSettings == null)
@@ -257,13 +321,23 @@ namespace AdvancedOutsideConnection
         }
 
         public event OutsideConnectionPropertyChanged<string> eventNameChanged;
+        public event OutsideConnectionPropertyChanged<Building.Flags> eventDirectionChanged;
 
         public void RefreshData()
         {
             if (m_CachedSettings == null)
                 return;
 
+            var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
+            var building = Utils.QueryBuilding(m_BuildingID);
+            m_PanelIcon.spriteName = CommonSpriteNames.SubBarPublicTransport[(int)transportInfo.m_transportType];
             m_ConnectionNameTextfield.text = m_CachedSettings.Name;
+            m_TransportTypeLabel.text = transportInfo.m_transportType.ToString();
+            m_DirectionInCheckbox.isChecked = (building.m_flags & Building.Flags.Incoming) != 0;
+            m_DirectionInCheckbox.readOnly = (m_CachedSettings.OriginalDirectionFlags & Building.Flags.Incoming) == 0;
+            m_DirectionOutCheckbox.isChecked = (building.m_flags & Building.Flags.Outgoing) != 0;
+            m_DirectionOutCheckbox.readOnly = (m_CachedSettings.OriginalDirectionFlags & Building.Flags.Outgoing) == 0;
+
             foreach (var comp in m_NameModeSubPanel.components)
             {
                 var checkbox = comp as UICheckBox;
@@ -273,7 +347,7 @@ namespace AdvancedOutsideConnection
 
             m_SingleNameTextFrame.text = m_CachedSettings.SingleGenerationName;
 
-            //// add one additional row for inserting
+            // add one additional row for inserting
             while (m_RandomNameContainer.components.Count <= m_CachedSettings.RandomGenerationNames.Count)
             {
                 var gameObject = new GameObject("AOCRandomNamePanelComponent", new System.Type[] { typeof(NameRowComponent) });
@@ -282,7 +356,6 @@ namespace AdvancedOutsideConnection
                 nameRowComponent.component.width = m_RandomNameContainer.width - 4;
                 nameRowComponent.eventDeleteClicked += OnRandomGenerationNameDeleted;
                 nameRowComponent.eventNameSubmitted += OnRandomGenerationNameSubmitted;
-                Utils.Log("added name row");
             }
 
             while (m_RandomNameContainer.components.Count > m_CachedSettings.RandomGenerationNames.Count + 1)
@@ -293,7 +366,6 @@ namespace AdvancedOutsideConnection
                 nameRowComponent.eventNameSubmitted -= OnRandomGenerationNameSubmitted;
                 m_RandomNameContainer.RemoveUIComponent(component);
                 UnityEngine.Object.Destroy(component.gameObject);
-                Utils.Log("deleted name row");
             }
 
             var textCount = 0;
@@ -317,9 +389,6 @@ namespace AdvancedOutsideConnection
             int i = 0;
             foreach (var panel in m_RandomNameContainer.components)
             {
-                //var panelComp = panel.gameObject.GetComponent<NameRowComponent>();
-                //if (panelComp != null)
-                //{
                 if (panel == comp)
                 {
                     if (i + 1 == m_RandomNameContainer.components.Count)
@@ -331,7 +400,6 @@ namespace AdvancedOutsideConnection
                     break;
                 }
                 ++i;
-                //}
             }
             RefreshData();
         }
@@ -341,21 +409,17 @@ namespace AdvancedOutsideConnection
             int i = 0;
             foreach (var panel in m_RandomNameContainer.components)
             {
-                //var panelComp = panel.gameObject.GetComponent<NameRowComponent>();
-                //if (panelComp != null)
-                //{
-                    if (panel == comp)
+                if (panel == comp)
+                {
+                    if (i + 1 == m_RandomNameContainer.components.Count)
                     {
-                        if (i + 1 == m_RandomNameContainer.components.Count)
-                        {
-                            m_CachedSettings.RandomGenerationNames.Add(newText);
-                        }
-                        else
-                            m_CachedSettings.RandomGenerationNames[i] = newText;
-                    break;
+                        m_CachedSettings.RandomGenerationNames.Add(newText);
                     }
+                    else
+                        m_CachedSettings.RandomGenerationNames[i] = newText;
+                break;
+                }
                     ++i;
-                //}
             }
             RefreshData();
         }

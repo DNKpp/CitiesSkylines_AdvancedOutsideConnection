@@ -23,6 +23,19 @@ namespace AdvancedOutsideConnection
             return BuildingManager.instance.m_buildings.m_buffer[buildingID];
         }
 
+        public static string GetStringForDirectionFlag(ushort buildingID)
+        {
+            var building = QueryBuilding(buildingID);
+            var flag = building.m_flags & Building.Flags.IncomingOutgoing;
+            if (flag == Building.Flags.IncomingOutgoing)
+                return "In&Out";
+            else if (flag == Building.Flags.Incoming)
+                return "In";
+            else if (flag == Building.Flags.Outgoing)
+                return "Out";
+            return "None";
+        }
+
         public static T MaxEnumValue<E, T>()
         {
             return Enum.GetValues(typeof(E)).Cast<T>().Max();

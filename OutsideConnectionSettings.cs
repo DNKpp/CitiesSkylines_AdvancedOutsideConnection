@@ -22,6 +22,8 @@ namespace AdvancedOutsideConnection
         public string SingleGenerationName { get; set; } = "";
 
         public string Name = "";
+
+        public Building.Flags OriginalDirectionFlags;
     }
 
     class OutsideConnectionSettingsManager : Singleton<OutsideConnectionSettingsManager>
@@ -74,6 +76,8 @@ namespace AdvancedOutsideConnection
                     settings = new OutsideConnectionSettings();
                     
                     settings.Name = transportType.ToString() + "-Outside Connection " + (typeCount[(int)transportType] + 1);
+                    var building = Utils.QueryBuilding(buildingID);
+                    settings.OriginalDirectionFlags = building.m_flags & Building.Flags.IncomingOutgoing;
                     m_SettingsDict.Add(buildingID, settings);
                 }
                 ++typeCount[(int)transportType];
@@ -101,6 +105,7 @@ namespace AdvancedOutsideConnection
                     }
 
                     SerializableDataExtension.WriteString(keyValue.Value.Name, buffer);
+                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.OriginalDirectionFlags, buffer);
                 }
                 SerializableDataExtension.instance.SerializableData.SaveData(_dataID, buffer.ToArray());
                 Utils.Log("End save data. Version: " + _dataVersion + " bytes written: " + buffer.m_size);
@@ -162,6 +167,8 @@ namespace AdvancedOutsideConnection
                 }
 
                 settings.Name = SerializableDataExtension.ReadString(buffer, ref index);
+                settings.OriginalDirectionFlags = (Building.Flags)SerializableDataExtension.ReadUInt16(buffer, ref index);
+
                 settingsDict.Add(buildingID, settings);
             }
             return true;

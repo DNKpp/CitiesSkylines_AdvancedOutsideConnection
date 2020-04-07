@@ -10,6 +10,7 @@ namespace AdvancedOutsideConnection
         private UISprite m_TransportTypeSprite = null;
         private UITextField m_ConnectionNameTextfield = null;
         private UIButton m_DetailViewButton = null;
+        private UILabel m_DirectionLabel = null;
         private OutsideConnectionSettings m_CachedSettings = null;
         public OutsideConnectionSettings currentSettings => m_CachedSettings;
 
@@ -28,7 +29,7 @@ namespace AdvancedOutsideConnection
 
             m_ConnectionNameTextfield = WidgetsFactory.AddTextField(m_MainPanel);
             m_ConnectionNameTextfield.size = new Vector2(175, 35);
-            m_ConnectionNameTextfield.relativePosition = new Vector3(100, 10);
+            m_ConnectionNameTextfield.relativePosition = new Vector3(75, 10);
             m_ConnectionNameTextfield.anchor = UIAnchorStyle.Right | UIAnchorStyle.Left | UIAnchorStyle.CenterVertical;
             m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newText)
             {
@@ -49,6 +50,15 @@ namespace AdvancedOutsideConnection
             //m_DetailViewButton.focusedBgSprite = "";
             m_DetailViewButton.pressedBgSprite = "LineDetailButtonPressed";
             //m_DetailViewButton.disabledBgSprite = "";
+
+            m_DirectionLabel = WidgetsFactory.AddLabel(m_MainPanel, "", false, "DirectionLabel");
+            m_DirectionLabel.autoSize = false;
+            m_DirectionLabel.textAlignment = UIHorizontalAlignment.Center;
+            m_DirectionLabel.width = 60;
+            m_DirectionLabel.height = m_ConnectionNameTextfield.height;
+            m_DirectionLabel.relativePosition = m_ConnectionNameTextfield.relativePosition + new Vector3(m_ConnectionNameTextfield.width + 15, 0);
+            m_DirectionLabel.anchor = UIAnchorStyle.Right | UIAnchorStyle.CenterVertical;
+
 
             m_DetailViewButton.eventClick += delegate
             {
@@ -82,6 +92,8 @@ namespace AdvancedOutsideConnection
             var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
             m_TransportTypeSprite.spriteName = CommonSpriteNames.SubBarPublicTransport[(int)transportInfo.m_transportType];
             m_ConnectionNameTextfield.text = m_CachedSettings.Name;
+
+            m_DirectionLabel.text = Utils.GetStringForDirectionFlag(m_BuildingID);
         }
 
         private void SetBuildingID(ushort id)

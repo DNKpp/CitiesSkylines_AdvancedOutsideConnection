@@ -102,6 +102,14 @@ namespace AdvancedOutsideConnection
             "buttonclosepressed"
         );
 
+        public static readonly SpriteSet IconArrowUp = new SpriteSet(
+            "IconUpArrow",
+            "IconUpArrowDisabled",
+            "IconUpArrowFocused",
+            "IconUpArrowHovered",
+            "IconUpArrowPressed"
+        );
+
         public static readonly string EmptySprite = "EmptySprite";
 
         public static readonly SpriteSet TextField = new SpriteSet(
@@ -198,6 +206,16 @@ namespace AdvancedOutsideConnection
             button.pressedBgSprite = sprites.pressed;
             button.hoveredBgSprite = sprites.hovered;
             button.size = new Vector2(32, 32);
+            return button;
+        }
+
+        public static UIButton AddButton(UIComponent parent, string text, string name = "Button")
+        {
+            var button = parent.AddUIComponent<UIButton>();
+            button.name = name;
+            button.text = text;
+            button.textHorizontalAlignment = UIHorizontalAlignment.Center;
+            button.autoSize = true;
             return button;
         }
 
