@@ -34,6 +34,7 @@ namespace AdvancedOutsideConnection
 
         public static readonly string MenuPanel2 = "MenuPanel2";
         public static readonly string GenericPanel = "GenericPanel";
+        public static readonly string InfoViewPanel = "InfoviewPanel";
 
         public static readonly string CheckBoxUnchecked = "check-unchecked";
         public static readonly string CheckBoxChecked = "check-checked";
@@ -131,21 +132,6 @@ namespace AdvancedOutsideConnection
             }
         }
 
-        private UIComponent component = null;
-        private UIButton button = null;
-        private UIButton closeButton = null;
-        private UICheckBox checkbox = null;
-        private UILabel label = null;
-        private UILabel headlineLabel = null;
-        private UITabContainer tabContainer = null;
-        private UITabstrip tabstrip = null;
-        private UIPanel panel = null;
-        private UISlicedSprite vThumb = null;
-        private UISlicedSprite vTrack = null;
-        private UISprite icon = null;
-        private UIButton tabButton = null;
-        private UISlicedSprite caption = null;
-
         private UIFont m_HeadlineFont = null;
         public UIFont headlineFont => m_HeadlineFont;
         private UIFont m_TextFont = null;
@@ -161,34 +147,15 @@ namespace AdvancedOutsideConnection
         {
             try
             {
-                component = UITemplateManager.Get("EmptyContainer");
-
                 var outsideConnectionInfoPanel = UIView.Find<UIPanel>(UIUtils.OutgoingConnectionInfoViewPanelName);
                 var infoPanelComponent = outsideConnectionInfoPanel.GetComponent<OutsideConnectionsInfoViewPanel>();
 
-                panel = infoPanelComponent.Find<UIPanel>("ExportLegend");
-                button = infoPanelComponent.Find<UIButton>("Export");
-                label = infoPanelComponent.Find<UILabel>("ExportTotal");
-                m_TextFont = label.font;
-                tabstrip = infoPanelComponent.Find<UITabstrip>("Tabstrip");
-                caption = UIUtils.MakeCopy(infoPanelComponent.Find<UISlicedSprite>("Caption"), component);
-                headlineLabel = UIUtils.MakeCopy(caption.Find<UILabel>("Label"), component);
-                m_HeadlineFont = headlineLabel.font;
-                icon = UIUtils.MakeCopy(caption.Find<UISprite>("Icon"), component);
-                var captionClose = caption.Find<UIButton>("Close");
-                UIUtils.ReleaseEvents(captionClose);
-                closeButton = UIUtils.MakeCopy(captionClose, component);
-                //ReleaseEvents(ref templates.closeButton);
-
-                //var trafficRoutesInfoPanel = UIView.Find<UIPanel>(UIUtils.TrafficRoutesInfoViewPanelName);
-                //var trafficRoutesPanelComponent = trafficRoutesInfoPanel.GetComponent<TrafficRoutesInfoViewPanel>();
-                //templates.checkbox = trafficRoutesPanelComponent.Find<UICheckBox>("CheckboxPedestrians");
+                m_TextFont = infoPanelComponent.Find<UILabel>("ExportTotal").font;
+                var caption = infoPanelComponent.Find<UISlicedSprite>("Caption");
+                m_HeadlineFont = caption.Find<UILabel>("Label").font;
 
                 var publicTransportDetailPanel = UIView.Find<UIPanel>(UIUtils.PublicTransportDetailPanel);
-                //vTrack = publicTransportDetailPanel.Find<UISlicedSprite>("Track");
-                //vThumb = publicTransportDetailPanel.Find<UISlicedSprite>("Thumb");
-                m_VerticalResizeHandle = UIUtils.MakeCopy(publicTransportDetailPanel.Find<UIResizeHandle>("Resize Handle"), component);
-                m_VerticalResizeHoverCursor = m_VerticalResizeHandle.hoverCursor;
+                m_VerticalResizeHoverCursor = publicTransportDetailPanel.Find<UIResizeHandle>("Resize Handle").hoverCursor;
             }
             catch (Exception ex)
             {
@@ -196,31 +163,29 @@ namespace AdvancedOutsideConnection
             }
         }
 
-        public static UISlicedSprite AddCaption(UIComponent parent, string text, string spriteName = null)
+        public static UIPanel AddPanelCaption(UIPanel parent, string text, string iconSpriteName, string name = "Caption")
         {
-            var factory = instance;
+            var caption = parent.AddUIComponent<UIPanel>();
+            caption.name = name;
+            caption.relativePosition = Vector3.zero;
+            caption.size = new Vector2(parent.width, 40);
+            caption.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Right;
 
-            var newCaption = UIUtils.MakeCopy(factory.caption, parent);
-            newCaption.width = parent.width;
+            var icon = AddPanelIcon(caption, iconSpriteName);
+            var label = AddLabel(caption, text, true);
 
-            var captionClose = newCaption.Find<UIButton>("Close");
-            UIUtils.ReleaseEvents(captionClose);
-            captionClose.eventClick += delegate (UIComponent component, UIMouseEventParameter mouseParam)
-            {
-                parent.Hide();
-            };
-
-            var dragHandle = newCaption.Find<UIDragHandle>("Drag Handle");
+            var dragHandle = AddPanelDragHandle(caption);
             dragHandle.target = parent;
+            var panelClose = AddPanelCloseButton(caption);
 
-            var captionLabel = newCaption.Find<UILabel>("Label");
-            captionLabel.text = text;
+            label.autoSize = false;
+            label.relativePosition = new Vector3(icon.position.x + icon.width + 2, 6);
+            label.size = new Vector2(panelClose.relativePosition.x - label.relativePosition.x -2, (caption.height - 2 * label.relativePosition.y));
+            label.textAlignment = UIHorizontalAlignment.Center;
+            label.verticalAlignment = UIVerticalAlignment.Middle;
+            label.anchor = UIAnchorStyle.Top | UIAnchorStyle.Right | UIAnchorStyle.Left;
 
-            var captionIcon = newCaption.Find<UISprite>("Icon");
-            if (spriteName != null)
-                captionIcon.spriteName = spriteName;
-
-            return newCaption;
+            return caption;
         }
 
         public static UIButton AddButton(UIComponent parent, CommonSpriteNames.SpriteSet sprites, string name = "Button")
@@ -356,10 +321,6 @@ namespace AdvancedOutsideConnection
             var close = AddButton(parent, CommonSpriteNames.IconClose, "Close");
             close.relativePosition = new Vector3(parent.width - close.width - 13, 2);
             close.anchor = UIAnchorStyle.Top | UIAnchorStyle.Right;
-            close.eventClick += delegate
-            {
-                parent.Hide();
-            };
             return close;
         }
 

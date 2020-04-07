@@ -123,6 +123,7 @@ namespace AdvancedOutsideConnection
             m_PanelIcon = WidgetsFactory.AddPanelIcon(m_MainPanel, CommonSpriteNames.IconOutsideConnections.normal);
             WidgetsFactory.AddPanelDragHandle(m_MainPanel);
             m_PanelClose = WidgetsFactory.AddPanelCloseButton(m_MainPanel);
+            m_PanelClose.eventClick += delegate { OnClose(); };
             m_LocationMarkerButton = WidgetsFactory.AddMultistateButton(m_MainPanel, CommonSpriteNames.LocationMarkerActive, CommonSpriteNames.LocationMarker, "LocationMarkerButton");
             m_LocationMarkerButton.relativePosition = new Vector3(m_PanelClose.relativePosition.x - m_LocationMarkerButton.width - 2, 4);
 
@@ -141,6 +142,11 @@ namespace AdvancedOutsideConnection
                     eventNameChanged?.Invoke(m_BuildingID, newText);
                 }
             };
+        }
+
+        private void OnClose()
+        {
+            m_MainPanel.Hide();
         }
 
         private void InitNameGenerationPanel()
@@ -189,9 +195,9 @@ namespace AdvancedOutsideConnection
             m_RandomNameContainerScrollbar = WidgetsFactory.AddVerticalScrollbar(m_NameGenerationPanel, m_RandomNameContainer);
 
             m_SingleNameTextFrame = WidgetsFactory.AddTextField(m_NameGenerationPanel);
-            m_SingleNameTextFrame.size = new Vector2(m_RandomNameContainer.width, 40);
+            m_SingleNameTextFrame.size = new Vector2(m_RandomNameContainer.width, 45);
             m_SingleNameTextFrame.relativePosition = m_RandomNameContainer.relativePosition;
-            m_SingleNameTextFrame.normalBgSprite = CommonSpriteNames.EmptySprite;
+            m_SingleNameTextFrame.normalBgSprite = CommonSpriteNames.InfoViewPanel;//CommonSpriteNames.EmptySprite;
             m_SingleNameTextFrame.color = Color.black;
             m_SingleNameTextFrame.anchor = UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.Top;
             m_SingleNameTextFrame.eventTextSubmitted += OnSingleNameSubmitted;

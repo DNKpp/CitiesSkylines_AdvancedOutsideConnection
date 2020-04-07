@@ -18,7 +18,7 @@ namespace AdvancedOutsideConnection
 
             m_Background = component.AddUIComponent<UIPanel>();
             m_Background.name = "BackgroundPanel";
-            m_Background.backgroundSprite = "InfoviewPanel";
+            m_Background.backgroundSprite = CommonSpriteNames.InfoViewPanel;
             m_Background.position = Vector3.zero;
             m_Background.size = component.size;
             m_Background.anchor = UIAnchorStyle.All;
