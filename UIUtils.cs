@@ -521,6 +521,16 @@ namespace AdvancedOutsideConnection
             return textfield;
         }
 
+        public static UITextField AddNumericTextField(UIComponent parent, float value, bool allowFloats = true, bool allowNegative = true, string name = "NumericTextField")
+        {
+            var textfield = AddTextField(parent);
+            textfield.numericalOnly = true;
+            textfield.allowFloats = allowFloats;
+            textfield.allowNegative = allowNegative;
+            textfield.text = value.ToString();
+            return textfield;
+        }
+
         public static UIScrollablePanel AddScrollablePanel(UIComponent parent, bool vertical = true)
         {
             var scrollabel = parent.AddUIComponent<UIScrollablePanel>();
