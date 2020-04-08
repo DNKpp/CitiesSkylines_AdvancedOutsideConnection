@@ -202,7 +202,10 @@ namespace AdvancedOutsideConnection
             m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newName)
             {
                 if (m_BuildingID != 0 && m_CachedSettings != null)
+                {
+                    m_CachedSettings.Name = newName;
                     eventNameChanged?.Invoke(m_BuildingID, newName);
+                }
             };
         }
 
@@ -316,7 +319,7 @@ namespace AdvancedOutsideConnection
             var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
             var building = Utils.QueryBuilding(m_BuildingID);
             m_PanelIcon.spriteName = CommonSprites.SubBarPublicTransport[(int)transportInfo.m_transportType];
-            m_ConnectionNameTextfield.text = BuildingManager.instance.GetBuildingName(m_BuildingID, InstanceID.Empty);
+            m_ConnectionNameTextfield.text = m_CachedSettings.Name;
             m_TransportTypeLabel.text = transportInfo.m_transportType.ToString();
             m_DirectionInCheckbox.isChecked = (building.m_flags & Building.Flags.Incoming) != 0;
             m_DirectionInCheckbox.readOnly = (m_CachedSettings.OriginalDirectionFlags & Building.Flags.Incoming) == 0;

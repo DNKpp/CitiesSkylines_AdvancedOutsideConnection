@@ -12,13 +12,6 @@ namespace AdvancedOutsideConnection
 {
     class OverviewPanelExtension : OverviewPanelBase
     {
-        class NameChangeTaskData
-        {
-            public ushort buildingID;
-            public AsyncTask<bool> task;
-        }
-        NameChangeTaskData m_AsyncNameChangeTaskData = null;
-
         private UIPanel m_MainPanel = null;
         private UIPanel m_Caption = null;
         private UIScrollablePanel m_ScrollablePanel = null;
@@ -52,15 +45,6 @@ namespace AdvancedOutsideConnection
             {
                 RefreshOutsideConnections();
                 m_LastOutsideConnectionCount = BuildingManager.instance.GetOutsideConnections().m_size;
-            }
-
-            if (m_AsyncNameChangeTaskData != null && m_AsyncNameChangeTaskData.task.completed)
-            {
-                if (m_OutsideConnectionDetailPanel.buildingID == m_AsyncNameChangeTaskData.buildingID)
-                    m_OutsideConnectionDetailPanel.RefreshData();
-
-                OnConnectionInfoChanged(m_AsyncNameChangeTaskData.buildingID);
-                m_AsyncNameChangeTaskData = null;
             }
         }
 
@@ -311,8 +295,10 @@ namespace AdvancedOutsideConnection
             if (buildingID == 0)
                 return;
 
-            var task = Utils.AsyncSetBuildingName(buildingID, name);
-            m_AsyncNameChangeTaskData = new NameChangeTaskData { buildingID = buildingID, task = task };
+            if (m_OutsideConnectionDetailPanel.buildingID == buildingID)
+                m_OutsideConnectionDetailPanel.RefreshData();
+
+            OnConnectionInfoChanged(buildingID);
         }
 
         private void OnConnectionInfoChanged(ushort buildingID)
@@ -339,9 +325,7 @@ namespace AdvancedOutsideConnection
                 return 0;
 
             var buildingMgr = BuildingManager.instance;
-            var lhsName = buildingMgr.GetBuildingName(lhsComponent.buildingID, InstanceID.Empty);
-            var rhsName = buildingMgr.GetBuildingName(rhsComponent.buildingID, InstanceID.Empty);
-            var value = OverviewPanelBase.NaturalCompare(lhsName, rhsName);
+            var value = OverviewPanelBase.NaturalCompare(lhsComponent.currentSettings.Name, rhsComponent.currentSettings.Name);
             return m_InverseSort ? -value : value;
         }
 

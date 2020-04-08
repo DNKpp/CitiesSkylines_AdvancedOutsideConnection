@@ -28,6 +28,11 @@ namespace AdvancedOutsideConnection
         public string SingleGenerationName { get; set; } = "";
 
         public Building.Flags OriginalDirectionFlags;
+
+        // When a custom building name is applied, the GenerateName function won't be called.
+        // Let's just introduce a custom Name instead, so we don't have to patch the more central
+        // GetBuildingName function and can simply rely on OutsideConnectionAI.GenerateName.
+        public string Name = "";
     }
 
     class OutsideConnectionSettingsManager : Singleton<OutsideConnectionSettingsManager>
@@ -79,8 +84,7 @@ namespace AdvancedOutsideConnection
                 {
                     settings = new OutsideConnectionSettings();
 
-                    var name = transportType.ToString() + "-Outside Connection " + (typeCount[(int)transportType] + 1);
-                    Utils.AsyncSetBuildingName(buildingID, name);
+                    settings.Name = transportType.ToString() + "-Outside Connection " + (typeCount[(int)transportType] + 1);
                     var building = Utils.QueryBuilding(buildingID);
                     settings.OriginalDirectionFlags = building.m_flags & Building.Flags.IncomingOutgoing;
                     m_SettingsDict.Add(buildingID, settings);
@@ -110,6 +114,7 @@ namespace AdvancedOutsideConnection
                     }
 
                     SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.OriginalDirectionFlags, buffer);
+                    SerializableDataExtension.WriteString(keyValue.Value.Name, buffer);
                 }
                 SerializableDataExtension.instance.SerializableData.SaveData(_dataID, buffer.ToArray());
                 Utils.Log("End save data. Version: " + _dataVersion + " bytes written: " + buffer.m_size);
@@ -171,6 +176,7 @@ namespace AdvancedOutsideConnection
                 }
 
                 settings.OriginalDirectionFlags = (Building.Flags)SerializableDataExtension.ReadUInt16(buffer, ref index);
+                settings.Name = SerializableDataExtension.ReadString(buffer, ref index);
 
                 settingsDict.Add(buildingID, settings);
             }

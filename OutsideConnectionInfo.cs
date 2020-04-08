@@ -42,7 +42,10 @@ namespace AdvancedOutsideConnection
             m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newName)
             {
                 if (!m_IsRefreshing && m_BuildingID != 0)
+                {
+                    m_CachedSettings.Name = newName;
                     eventNameChanged?.Invoke(m_BuildingID, newName);
+                }
             };
 
             m_DetailViewButton = m_MainPanel.AddUIComponent<UIButton>();
@@ -98,7 +101,7 @@ namespace AdvancedOutsideConnection
 
             var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
             m_TransportTypeSprite.spriteName = CommonSprites.SubBarPublicTransport[(int)transportInfo.m_transportType];
-            m_ConnectionNameTextfield.text = BuildingManager.instance.GetBuildingName(m_BuildingID, InstanceID.Empty);
+            m_ConnectionNameTextfield.text = m_CachedSettings.Name;
 
             m_DirectionLabel.text = Utils.GetStringForDirectionFlag(m_BuildingID);
 
