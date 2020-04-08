@@ -139,6 +139,70 @@ namespace AdvancedOutsideConnection
             "IconUpArrowPressed"
         );
 
+        public static readonly SpriteSet SubBarRoadsHighway = new SpriteSet(
+            "SubBarRoadsHighway",
+            "SubBarRoadsHighwayDisabled",
+            "SubBarRoadsHighwayFocused",
+            "SubBarRoadsHighwayHovered",
+            "SubBarRoadsHighwayPressed"
+        );
+
+        public static readonly SpriteSet SubBarPublicTransportBus = new SpriteSet(
+            "SubBarPublicTransportBus",
+            "SubBarPublicTransportBusDisabled",
+            "SubBarPublicTransportBusFocused",
+            "SubBarPublicTransportBusHovered",
+            "SubBarPublicTransportBusPressed"
+        );
+
+        public static readonly SpriteSet SubBarPublicTransportMetro = new SpriteSet(
+            "SubBarPublicTransportMetro",
+            "SubBarPublicTransportMetroDisabled",
+            "SubBarPublicTransportMetroFocused",
+            "SubBarPublicTransportMetroHovered",
+            "SubBarPublicTransportMetroPressed"
+        );
+
+        public static readonly SpriteSet SubBarPublicTransportPlane = new SpriteSet(
+            "SubBarPublicTransportPlane",
+            "SubBarPublicTransportPlaneDisabled",
+            "SubBarPublicTransportPlaneFocused",
+            "SubBarPublicTransportPlaneHovered",
+            "SubBarPublicTransportPlanePressed"
+        );
+
+        public static readonly SpriteSet SubBarPublicTransportShip = new SpriteSet(
+            "SubBarPublicTransportShip",
+            "SubBarPublicTransportShipDisabled",
+            "SubBarPublicTransportShipFocused",
+            "SubBarPublicTransportShipHovered",
+            "SubBarPublicTransportShipPressed"
+        );
+
+        public static readonly SpriteSet SubBarPublicTransportTrain = new SpriteSet(
+            "SubBarPublicTransportTrain",
+            "SubBarPublicTransportTrainDisabled",
+            "SubBarPublicTransportTrainFocused",
+            "SubBarPublicTransportTrainHovered",
+            "SubBarPublicTransportTrainPressed"
+        );
+
+        public static readonly SpriteSet SubBarRaodsIntersection = new SpriteSet(
+            "SubBarRoadsIntersection",
+            "SubBarRoadsIntersectionDisabled",
+            "SubBarRoadsIntersectionFocused",
+            "SubBarRoadsIntersectionHovered",
+            "SubBarRoadsIntersectionPressed"
+        );
+
+        public static readonly SpriteSet SubBarRaodsLarge = new SpriteSet(
+            "SubBarRoadsLarge",
+            "SubBarRoadsLargeDisabled",
+            "SubBarRoadsLargeFocused",
+            "SubBarRoadsLargeHovered",
+            "SubBarRoadsLargePressed"
+        );
+
         public static readonly string EmptySprite = "EmptySprite";
 
         public static readonly SpriteSet TextField = new SpriteSet(
