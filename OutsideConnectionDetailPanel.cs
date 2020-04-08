@@ -81,19 +81,8 @@ namespace AdvancedOutsideConnection
 
         private static readonly string m_MainPanelName = "AOC_DetailMainPanel";
 
-        private void LateUpdate()
-        {
-            if (!m_MainPanel.isVisible)
-                return;
-            if (m_LocationMarkerButton && m_LocationMarkerButton.isVisible)
-            {
-                m_LocationMarkerButton.activeStateIndex = ToolsModifierControl.cameraController.GetTarget() == InstanceID.Empty ? 0 : 1;
-            }
-            if (m_ShowHideRoutesButton)
-            {
-                m_ShowHideRoutesButton.activeStateIndex = (Utils.IsRoutesViewOn() ? 1 : 0);
-            }
-        }
+        public event OutsideConnectionPropertyChanged<string> eventNameChanged;
+        public event OutsideConnectionPropertyChanged<Building.Flags> eventDirectionChanged;
 
         private void OnEnable()
         {
@@ -211,24 +200,6 @@ namespace AdvancedOutsideConnection
             };
         }
 
-        private void OnShowHideRoutesClicked(UIComponent component, UIMouseEventParameter mouseParam)
-        {
-            if (Utils.IsRoutesViewOn())
-            {
-                InfoManager.instance.SetCurrentMode(InfoManager.InfoMode.None, InfoManager.SubInfoMode.Default);
-            }
-            else
-            {
-                SelectOutsideConnectionBuilding();
-                InfoManager.instance.SetCurrentMode(InfoManager.InfoMode.TrafficRoutes, InfoManager.SubInfoMode.Default);
-            }
-        }
-
-        private void OnClose()
-        {
-            m_MainPanel.Hide();
-        }
-
         private void InitNameGenerationPanel()
         {
             m_NameGenerationPanel = m_MainPanel.AddUIComponent<UIPanel>();
@@ -293,47 +264,17 @@ namespace AdvancedOutsideConnection
             m_NameGenerationPanel.minimumSize = new Vector2(m_NameGenerationPanel.width, m_NameModeSubPanel.relativePosition.y + m_NameModeSubPanel.height);
         }
 
-        private void OnDirectionCheckboxChanged(UIComponent component, bool isChecked)
+        private void LateUpdate()
         {
-            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
+            if (!m_MainPanel.isVisible)
                 return;
-
-            var buildingFlags = Utils.QueryBuilding(m_BuildingID).m_flags;
-            var flag = (Building.Flags)(component as UICheckBox).objectUserData;
-
-            // do not allow to apply/remove flags, which weren't set in the original
-            if ((m_CachedSettings.OriginalDirectionFlags & flag) == 0)
-                return;
-            Utils.Log("flag before: " + buildingFlags);
-            if (isChecked)
-                buildingFlags |= flag;
-            else
-                buildingFlags &= ~flag;
-            Utils.Log("flag after: " + buildingFlags);
-
-            BuildingManager.instance.m_buildings.m_buffer[m_BuildingID].m_flags = buildingFlags;     // need to push back the copy
-
-            eventDirectionChanged?.Invoke(m_BuildingID, buildingFlags & Building.Flags.IncomingOutgoing);
-        }
-
-        private void OnSingleNameSubmitted(UIComponent component, string text)
-        {
-            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
-                return;
-
-            m_CachedSettings.SingleGenerationName = text;
-        }
-
-        private void OnNameGenerationModeChanged(UIComponent component, bool isChecked)
-        {
-            if (m_IsRefreshing || !isChecked || m_BuildingID == 0 || m_CachedSettings == null)
-                return;
-
-            var checkbox = component as UICheckBox;
-            if (checkbox)
+            if (m_LocationMarkerButton && m_LocationMarkerButton.isVisible)
             {
-                m_CachedSettings.NameMode = (OutsideConnectionSettings.NameModeType)checkbox.objectUserData;
-                AdjustNameGenerationComponentVisibility();
+                m_LocationMarkerButton.activeStateIndex = ToolsModifierControl.cameraController.GetTarget() == InstanceID.Empty ? 0 : 1;
+            }
+            if (m_ShowHideRoutesButton)
+            {
+                m_ShowHideRoutesButton.activeStateIndex = (Utils.IsRoutesViewOn() ? 1 : 0);
             }
         }
 
@@ -358,9 +299,6 @@ namespace AdvancedOutsideConnection
                     break;
             }
         }
-
-        public event OutsideConnectionPropertyChanged<string> eventNameChanged;
-        public event OutsideConnectionPropertyChanged<Building.Flags> eventDirectionChanged;
 
         public void RefreshData()
         {
@@ -427,6 +365,96 @@ namespace AdvancedOutsideConnection
             m_IsRefreshing = false;
         }
 
+        public void ChangeTarget(ushort buildingID)
+        {
+            if (buildingID == 0 || !OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(buildingID, out m_CachedSettings))
+            {
+                m_BuildingID = 0;
+                m_CachedSettings = null;
+                return;
+            }
+
+            m_BuildingID = buildingID;
+            RefreshData();
+            AdjustNameGenerationComponentVisibility();
+
+            if (m_ShowHideRoutesButton.activeStateIndex == 1)
+                SelectOutsideConnectionBuilding();
+        }
+
+        private void ZoomToLocation()
+        {
+            if (m_BuildingID == 0)
+                return;
+
+            var building = BuildingManager.instance.m_buildings.m_buffer[m_BuildingID];
+            var instanceID = default(InstanceID);
+            instanceID.Building = m_BuildingID;
+            ToolsModifierControl.cameraController.SetTarget(instanceID, building.m_position, true);
+        }
+
+        private void OnShowHideRoutesClicked(UIComponent component, UIMouseEventParameter mouseParam)
+        {
+            if (Utils.IsRoutesViewOn())
+            {
+                InfoManager.instance.SetCurrentMode(InfoManager.InfoMode.None, InfoManager.SubInfoMode.Default);
+            }
+            else
+            {
+                SelectOutsideConnectionBuilding();
+                InfoManager.instance.SetCurrentMode(InfoManager.InfoMode.TrafficRoutes, InfoManager.SubInfoMode.Default);
+            }
+        }
+
+        private void OnClose()
+        {
+            m_MainPanel.Hide();
+        }
+
+        private void OnDirectionCheckboxChanged(UIComponent component, bool isChecked)
+        {
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            var buildingFlags = Utils.QueryBuilding(m_BuildingID).m_flags;
+            var flag = (Building.Flags)(component as UICheckBox).objectUserData;
+
+            // do not allow to apply/remove flags, which weren't set in the original
+            if ((m_CachedSettings.OriginalDirectionFlags & flag) == 0)
+                return;
+            Utils.Log("flag before: " + buildingFlags);
+            if (isChecked)
+                buildingFlags |= flag;
+            else
+                buildingFlags &= ~flag;
+            Utils.Log("flag after: " + buildingFlags);
+
+            BuildingManager.instance.m_buildings.m_buffer[m_BuildingID].m_flags = buildingFlags;     // need to push back the copy
+
+            eventDirectionChanged?.Invoke(m_BuildingID, buildingFlags & Building.Flags.IncomingOutgoing);
+        }
+
+        private void OnSingleNameSubmitted(UIComponent component, string text)
+        {
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            m_CachedSettings.SingleGenerationName = text;
+        }
+
+        private void OnNameGenerationModeChanged(UIComponent component, bool isChecked)
+        {
+            if (m_IsRefreshing || !isChecked || m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            var checkbox = component as UICheckBox;
+            if (checkbox)
+            {
+                m_CachedSettings.NameMode = (OutsideConnectionSettings.NameModeType)checkbox.objectUserData;
+                AdjustNameGenerationComponentVisibility();
+            }
+        }
+
         private void OnRandomGenerationNameDeleted(UIComponent comp, UIMouseEventParameter mouseParam)
         {
             int i = 0;
@@ -472,34 +500,6 @@ namespace AdvancedOutsideConnection
             var instance = new InstanceID();
             instance.Building = m_BuildingID;
             InstanceManager.instance.SelectInstance(instance);
-        }
-
-        public void ChangeTarget(ushort buildingID)
-        {
-            if (buildingID == 0 || !OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(buildingID, out m_CachedSettings))
-            {
-                m_BuildingID = 0;
-                m_CachedSettings = null;
-                return;
-            }
-
-            m_BuildingID = buildingID;
-            RefreshData();
-            AdjustNameGenerationComponentVisibility();
-
-            if (m_ShowHideRoutesButton.activeStateIndex == 1)
-                SelectOutsideConnectionBuilding();
-        }
-
-        private void ZoomToLocation()
-        {
-            if (m_BuildingID == 0)
-                return;
-
-            var building = BuildingManager.instance.m_buildings.m_buffer[m_BuildingID];
-            var instanceID = default(InstanceID);
-            instanceID.Building = m_BuildingID;
-            ToolsModifierControl.cameraController.SetTarget(instanceID, building.m_position, true);
         }
 
         private void OnLocationMarkerClicked(UIComponent component, UIMouseEventParameter mouseParam)

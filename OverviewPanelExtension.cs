@@ -34,10 +34,29 @@ namespace AdvancedOutsideConnection
         {
             DEFAULT,
             TRANSPORT_TYPE,
-            NAME
+            NAME,
+            DIRECTION
         };
         private SortCriterion m_CurSortCriterion = SortCriterion.DEFAULT;
         private bool m_InverseSort = false;
+
+        private void Update()
+        {
+            if (m_Initialized && m_LastOutsideConnectionCount != BuildingManager.instance.GetOutsideConnections().m_size)
+            {
+                RefreshOutsideConnections();
+                m_LastOutsideConnectionCount = BuildingManager.instance.GetOutsideConnections().m_size;
+            }
+
+            if (m_AsyncNameChangeTaskData != null && m_AsyncNameChangeTaskData.task.completed)
+            {
+                if (m_OutsideConnectionDetailPanel.buildingID == m_AsyncNameChangeTaskData.buildingID)
+                    m_OutsideConnectionDetailPanel.RefreshData();
+
+                OnConnectionInfoChanged(m_AsyncNameChangeTaskData.buildingID);
+                m_AsyncNameChangeTaskData = null;
+            }
+        }
 
         private void OnDestroy()
         {
@@ -89,7 +108,7 @@ namespace AdvancedOutsideConnection
                 OnClose();
             };
 
-            SetupOutsideConnectionTitle();
+            InitOutsideConnectionTitle();
 
             m_ScrollablePanel = WidgetsFactory.AddScrollablePanel(m_MainPanel);
             m_ScrollablePanel.relativePosition = new Vector3(0, 85);
@@ -114,63 +133,55 @@ namespace AdvancedOutsideConnection
             m_Initialized = true;
         }
 
-        private void OnPositionChanged(UIComponent comp, Vector2 newPosition)
+        private void InitOutsideConnectionTitle()
         {
-            if (!m_IsAttachedToOutConPanel)
-                return;
+            m_OutsideConnectionTitle = m_MainPanel.AddUIComponent<UIPanel>();
+            m_OutsideConnectionTitle.relativePosition = new Vector3(5, 45);
+            m_OutsideConnectionTitle.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Right;
+            m_OutsideConnectionTitle.name = "OutsideConnectionTitle";
+            m_OutsideConnectionTitle.clipChildren = false;
+            m_OutsideConnectionTitle.autoLayout = true;
+            m_OutsideConnectionTitle.autoLayoutDirection = LayoutDirection.Horizontal;
+            m_OutsideConnectionTitle.autoLayoutPadding = new RectOffset(10, 15, 5, 5);
 
-            var panelComp = m_OutsideConnectionsInfoViewPanel.component;
-            var diff = m_MainPanel.absolutePosition - panelComp.absolutePosition;
-            if (diff.y != 0 || diff.x != panelComp.width + 1)
-                m_IsAttachedToOutConPanel = false;
-        }
+            var titleButtons = new UIButton[3];
 
-        private void OnClose()
-        {
-            m_MainPanel.Hide();
-        }
+            titleButtons[0] = m_OutsideConnectionTitle.AddUIComponent<UIButton>();
+            titleButtons[0].name = "TransportTypeButton";
+            titleButtons[0].verticalAlignment = UIVerticalAlignment.Middle;
+            titleButtons[0].horizontalAlignment = UIHorizontalAlignment.Center;
+            titleButtons[0].size = new Vector2(32, 32);
+            titleButtons[0].disabledBgSprite = "InfoIconPublicTransportDisabled";
+            titleButtons[0].pressedBgSprite = "InfoIconPublicTransportPressed";
+            titleButtons[0].normalBgSprite = "InfoIconPublicTransport";
+            titleButtons[0].focusedBgSprite = "InfoIconPublicTransportFocused";
+            titleButtons[0].hoveredBgSprite = "InfoIconPublicTransportHovered";
 
-        private void OnShow()
-        {
-            m_IsAttachedToOutConPanel = true;
-            var panel = m_OutsideConnectionsInfoViewPanel.component;
-            MoveNextToUIComponent(panel);
-            m_MainPanel.Show();
-        }
-
-        private void Update()
-        {
-            if (m_Initialized && m_LastOutsideConnectionCount != BuildingManager.instance.GetOutsideConnections().m_size)
+            titleButtons[0].eventClick += delegate
             {
-                RefreshOutsideConnections();
-                m_LastOutsideConnectionCount = BuildingManager.instance.GetOutsideConnections().m_size;
-            }
+                OnTransportTypeSort();
+            };
 
-            if (m_AsyncNameChangeTaskData != null && m_AsyncNameChangeTaskData.task.completed)
+            titleButtons[1] = m_OutsideConnectionTitle.AddUIComponent<UIButton>();
+            titleButtons[1].name = "NameTitle";
+            titleButtons[1].text = "Connection Name";
+            titleButtons[1].textHorizontalAlignment = UIHorizontalAlignment.Center;
+            titleButtons[1].size = new Vector2(235, 24);
+            titleButtons[1].textScale = 1.0625f;
+
+            titleButtons[1].eventClick += delegate
             {
-                if (m_OutsideConnectionDetailPanel.buildingID == m_AsyncNameChangeTaskData.buildingID)
-                    m_OutsideConnectionDetailPanel.RefreshData();
+                OnNameSort();
+            };
 
-                OnConnectionInfoChanged(m_AsyncNameChangeTaskData.buildingID);
-                m_AsyncNameChangeTaskData = null;
-            }
-        }
+            titleButtons[2] = WidgetsFactory.AddButton(m_OutsideConnectionTitle, "Direction", "DirectionButton");
+            titleButtons[2].size = new Vector2(100, 24);
+            titleButtons[2].textScale = 1.0625f;
 
-        private void OnOutsideConnectionInfoViewPanelVisibilityChanged(UIComponent comp, bool isVisible)
-        {
-            if (isVisible)
-                OnShow();
-            else
+            titleButtons[2].eventClick += delegate
             {
-                if (!Utils.IsRoutesViewOn())
-                    OnClose();
-            }
-        }
-
-        private void OnOutsideConnectionInfoViewPanelPositionChanged(UIComponent comp, Vector2 newPosition)
-        {
-            if (m_IsAttachedToOutConPanel)
-                MoveNextToUIComponent(m_OutsideConnectionsInfoViewPanel.component);
+                OnDirectionSort();
+            };
         }
 
         private void SetupEventsWithOutsideConnectionInfoViewPanel(bool init)
@@ -229,144 +240,45 @@ namespace AdvancedOutsideConnection
             OnTransportTypeSort();
         }
 
-        private void SetupOutsideConnectionTitle()
+        private void OnClose()
         {
-            m_OutsideConnectionTitle = m_MainPanel.AddUIComponent<UIPanel>();
-            m_OutsideConnectionTitle.relativePosition = new Vector3(5, 45);
-            m_OutsideConnectionTitle.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Right;
-            m_OutsideConnectionTitle.name = "OutsideConnectionTitle";
-            m_OutsideConnectionTitle.clipChildren = false;
-            m_OutsideConnectionTitle.autoLayout = true;
-            m_OutsideConnectionTitle.autoLayoutDirection = LayoutDirection.Horizontal;
-            m_OutsideConnectionTitle.autoLayoutPadding = new RectOffset(10, 15, 5, 5);
-
-            var titleButtons = new UIButton[3];
-
-            titleButtons[0] = m_OutsideConnectionTitle.AddUIComponent<UIButton>();
-            titleButtons[0].name = "TransportTypeButton";
-            titleButtons[0].verticalAlignment = UIVerticalAlignment.Middle;
-            titleButtons[0].horizontalAlignment = UIHorizontalAlignment.Center;
-            titleButtons[0].size = new Vector2(32, 32);
-            titleButtons[0].disabledBgSprite = "InfoIconPublicTransportDisabled";
-            titleButtons[0].pressedBgSprite = "InfoIconPublicTransportPressed";
-            titleButtons[0].normalBgSprite = "InfoIconPublicTransport";
-            titleButtons[0].focusedBgSprite = "InfoIconPublicTransportFocused";
-            titleButtons[0].hoveredBgSprite = "InfoIconPublicTransportHovered";
-
-            titleButtons[0].eventClick += delegate
-            {
-                OnTransportTypeSort();
-            };
-
-            titleButtons[1] = m_OutsideConnectionTitle.AddUIComponent<UIButton>();
-            titleButtons[1].name = "NameTitle";
-            titleButtons[1].text = "Connection Name";
-            titleButtons[1].textHorizontalAlignment = UIHorizontalAlignment.Center;
-            titleButtons[1].size = new Vector2(235, 24);
-            titleButtons[1].textScale = 1.0625f;
-
-            titleButtons[1].eventClick += delegate
-            {
-                OnNameSort();
-            };
-
-            titleButtons[2] = WidgetsFactory.AddButton(m_OutsideConnectionTitle, "Direction", "DirectionButton");
-            titleButtons[2].size = new Vector2(100, 24);
-            titleButtons[2].textScale = 1.0625f;
-
-            titleButtons[2].eventClick += delegate
-            {
-                OnDirectionSort();
-            };
+            m_MainPanel.Hide();
         }
 
-        private void OnTransportTypeSort()
+        private void OnShow()
         {
-            if (!m_Initialized)
-                return;
-
-            Sort(SortCriterion.TRANSPORT_TYPE,
-                (UIComponent lhs, UIComponent rhs) =>
-                {
-                    if (lhs == null || lhs == null)
-                        return 0;
-
-                    var lhsComponent = lhs.GetComponent<OutsideConnectionInfo>();
-                    var rhsComponent = rhs.GetComponent<OutsideConnectionInfo>();
-                    if (lhsComponent == null || rhsComponent == null || lhsComponent.buildingID == 0 || rhsComponent.buildingID == 0)
-                        return 0;
-
-                    var value = Utils.QueryTransportInfo(lhsComponent.buildingID).m_transportType - Utils.QueryTransportInfo(rhsComponent.buildingID).m_transportType;
-                    if (value != 0)
-                        return m_InverseSort ? -value : value;
-                    return CompareNames(lhs, rhs);
-                }
-            );
+            m_IsAttachedToOutConPanel = true;
+            var panel = m_OutsideConnectionsInfoViewPanel.component;
+            MoveNextToUIComponent(panel);
+            m_MainPanel.Show();
         }
 
-        private void OnNameSort()
+        private void OnOutsideConnectionInfoViewPanelVisibilityChanged(UIComponent comp, bool isVisible)
         {
-            if (!m_Initialized)
-                return;
-
-            Sort(SortCriterion.NAME, CompareNames);
-        }
-
-        private void OnDirectionSort()
-        {
-            if (!m_Initialized)
-                return;
-
-            Sort(SortCriterion.TRANSPORT_TYPE,
-                (UIComponent lhs, UIComponent rhs) =>
-                {
-                    if (lhs == null || lhs == null)
-                        return 0;
-
-                    var lhsComponent = lhs.GetComponent<OutsideConnectionInfo>();
-                    var rhsComponent = rhs.GetComponent<OutsideConnectionInfo>();
-                    if (lhsComponent == null || rhsComponent == null || lhsComponent.buildingID == 0 || rhsComponent.buildingID == 0)
-                        return 0;
-
-                    var lhsDir = Utils.QueryBuilding(lhsComponent.buildingID).m_flags & Building.Flags.IncomingOutgoing;
-                    var rhsDir = Utils.QueryBuilding(rhsComponent.buildingID).m_flags & Building.Flags.IncomingOutgoing;
-                    var value = lhsDir - rhsDir;
-                    if (value != 0)
-                        return m_InverseSort ? -value : value;
-                    return CompareNames(lhs, rhs);
-                }
-            );
-        }
-
-        private void Sort(SortCriterion criterion, Comparison<UIComponent> compare)
-        {
-            if (m_CurSortCriterion == criterion)
-                m_InverseSort = !m_InverseSort;
+            if (isVisible)
+                OnShow();
             else
-                m_InverseSort = false;
-            if (m_ScrollablePanel.components.Count > 0)
             {
-                OverviewPanelBase.Quicksort(m_ScrollablePanel.components, compare);
-                m_CurSortCriterion = criterion;
-                m_ScrollablePanel.Invalidate();
+                if (!Utils.IsRoutesViewOn())
+                    OnClose();
             }
         }
 
-        private int CompareNames(UIComponent lhs, UIComponent rhs)
+        private void OnOutsideConnectionInfoViewPanelPositionChanged(UIComponent comp, Vector2 newPosition)
         {
-            if (lhs == null || lhs == null)
-                return 0;
+            if (m_IsAttachedToOutConPanel)
+                MoveNextToUIComponent(m_OutsideConnectionsInfoViewPanel.component);
+        }
 
-            var lhsComponent = lhs.GetComponent<OutsideConnectionInfo>();
-            var rhsComponent = rhs.GetComponent<OutsideConnectionInfo>();
-            if (lhsComponent == null || rhsComponent == null)
-                return 0;
+        private void OnPositionChanged(UIComponent comp, Vector2 newPosition)
+        {
+            if (!m_IsAttachedToOutConPanel)
+                return;
 
-            var buildingMgr = BuildingManager.instance;
-            var lhsName = buildingMgr.GetBuildingName(lhsComponent.buildingID, InstanceID.Empty);
-            var rhsName = buildingMgr.GetBuildingName(rhsComponent.buildingID, InstanceID.Empty);
-            var value = OverviewPanelBase.NaturalCompare(lhsName, rhsName);
-            return m_InverseSort ? -value : value;
+            var panelComp = m_OutsideConnectionsInfoViewPanel.component;
+            var diff = m_MainPanel.absolutePosition - panelComp.absolutePosition;
+            if (diff.y != 0 || diff.x != panelComp.width + 1)
+                m_IsAttachedToOutConPanel = false;
         }
 
         private void OnDetailsOpened(ushort buildingID)
@@ -394,7 +306,7 @@ namespace AdvancedOutsideConnection
                 return;
 
             var task = Utils.AsyncSetBuildingName(buildingID, name);
-            m_AsyncNameChangeTaskData = new NameChangeTaskData{ buildingID = buildingID, task = task };
+            m_AsyncNameChangeTaskData = new NameChangeTaskData { buildingID = buildingID, task = task };
         }
 
         private void OnConnectionInfoChanged(ushort buildingID)
@@ -408,6 +320,95 @@ namespace AdvancedOutsideConnection
                     return;
                 }
             }
+        }
+
+        private int CompareNames(UIComponent lhs, UIComponent rhs)
+        {
+            if (lhs == null || lhs == null)
+                return 0;
+
+            var lhsComponent = lhs.GetComponent<OutsideConnectionInfo>();
+            var rhsComponent = rhs.GetComponent<OutsideConnectionInfo>();
+            if (lhsComponent == null || rhsComponent == null)
+                return 0;
+
+            var buildingMgr = BuildingManager.instance;
+            var lhsName = buildingMgr.GetBuildingName(lhsComponent.buildingID, InstanceID.Empty);
+            var rhsName = buildingMgr.GetBuildingName(rhsComponent.buildingID, InstanceID.Empty);
+            var value = OverviewPanelBase.NaturalCompare(lhsName, rhsName);
+            return m_InverseSort ? -value : value;
+        }
+
+        private void Sort(SortCriterion criterion, Comparison<UIComponent> compare)
+        {
+            if (m_CurSortCriterion == criterion)
+                m_InverseSort = !m_InverseSort;
+            else
+                m_InverseSort = false;
+            if (m_ScrollablePanel.components.Count > 0)
+            {
+                OverviewPanelBase.Quicksort(m_ScrollablePanel.components, compare);
+                m_CurSortCriterion = criterion;
+                m_ScrollablePanel.Invalidate();
+            }
+        }
+
+        private void OnNameSort()
+        {
+            if (!m_Initialized)
+                return;
+
+            Sort(SortCriterion.NAME, CompareNames);
+        }
+
+        private void OnDirectionSort()
+        {
+            if (!m_Initialized)
+                return;
+
+            Sort(SortCriterion.DIRECTION,
+                (UIComponent lhs, UIComponent rhs) =>
+                {
+                    if (lhs == null || lhs == null)
+                        return 0;
+
+                    var lhsComponent = lhs.GetComponent<OutsideConnectionInfo>();
+                    var rhsComponent = rhs.GetComponent<OutsideConnectionInfo>();
+                    if (lhsComponent == null || rhsComponent == null || lhsComponent.buildingID == 0 || rhsComponent.buildingID == 0)
+                        return 0;
+
+                    var lhsDir = Utils.QueryBuilding(lhsComponent.buildingID).m_flags & Building.Flags.IncomingOutgoing;
+                    var rhsDir = Utils.QueryBuilding(rhsComponent.buildingID).m_flags & Building.Flags.IncomingOutgoing;
+                    var value = lhsDir - rhsDir;
+                    if (value != 0)
+                        return m_InverseSort ? -value : value;
+                    return CompareNames(lhs, rhs);
+                }
+            );
+        }
+
+        private void OnTransportTypeSort()
+        {
+            if (!m_Initialized)
+                return;
+
+            Sort(SortCriterion.TRANSPORT_TYPE,
+                (UIComponent lhs, UIComponent rhs) =>
+                {
+                    if (lhs == null || lhs == null)
+                        return 0;
+
+                    var lhsComponent = lhs.GetComponent<OutsideConnectionInfo>();
+                    var rhsComponent = rhs.GetComponent<OutsideConnectionInfo>();
+                    if (lhsComponent == null || rhsComponent == null || lhsComponent.buildingID == 0 || rhsComponent.buildingID == 0)
+                        return 0;
+
+                    var value = Utils.QueryTransportInfo(lhsComponent.buildingID).m_transportType - Utils.QueryTransportInfo(rhsComponent.buildingID).m_transportType;
+                    if (value != 0)
+                        return m_InverseSort ? -value : value;
+                    return CompareNames(lhs, rhs);
+                }
+            );
         }
     }
 }
