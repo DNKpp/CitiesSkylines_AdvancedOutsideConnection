@@ -309,6 +309,13 @@ namespace AdvancedOutsideConnection
             }
         }
 
+        private void RefreshDirectionCheckbox(UICheckBox checkbox)
+        {
+            var building = Utils.QueryBuilding(m_BuildingID);
+            checkbox.isChecked = (building.m_flags & (Building.Flags)checkbox.objectUserData) != 0;
+            checkbox.isEnabled = (m_CachedSettings.OriginalDirectionFlags & (Building.Flags)checkbox.objectUserData) != 0;
+        }
+
         public void RefreshData()
         {
             if (m_BuildingID == 0 || m_CachedSettings == null)
@@ -317,14 +324,11 @@ namespace AdvancedOutsideConnection
             m_IsRefreshing = true;
 
             var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
-            var building = Utils.QueryBuilding(m_BuildingID);
             m_PanelIcon.spriteName = CommonSprites.SubBarPublicTransport[(int)transportInfo.m_transportType];
             m_ConnectionNameTextfield.text = m_CachedSettings.Name;
             m_TransportTypeLabel.text = transportInfo.m_transportType.ToString();
-            m_DirectionInCheckbox.isChecked = (building.m_flags & Building.Flags.Incoming) != 0;
-            m_DirectionInCheckbox.readOnly = (m_CachedSettings.OriginalDirectionFlags & Building.Flags.Incoming) == 0;
-            m_DirectionOutCheckbox.isChecked = (building.m_flags & Building.Flags.Outgoing) != 0;
-            m_DirectionOutCheckbox.readOnly = (m_CachedSettings.OriginalDirectionFlags & Building.Flags.Outgoing) == 0;
+            RefreshDirectionCheckbox(m_DirectionInCheckbox);
+            RefreshDirectionCheckbox(m_DirectionOutCheckbox);
 
             foreach (var comp in m_NameModeSubPanel.components)
             {
