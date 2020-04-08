@@ -1,9 +1,10 @@
 ## Author
-Dominic Koepke [Mail](DNKpp2011@gmail.com): DNKpp2011@gmail.com
+Dominic Koepke  
+Mail: DNKpp2011@gmail.com
 
 ## License
 
-[BSL License](https://github.com/DNKpp/CitiesSkylines_AdvancedOutsideConnection/blob/master/LICENSE_1_0.txt) (free, open source)
+[BSL-1.0](https://github.com/DNKpp/CitiesSkylines_AdvancedOutsideConnection/blob/master/LICENSE_1_0.txt) (free, open source)
 
 ```
           Copyright Dominic Koepke 2020 - 2020.
@@ -23,4 +24,4 @@ The following patches will be applied:
 
 Class | Function | Prefix | Postfix | Description
 ------|----------|--------|---------|----------------
-OutsideConnectionAI | GenerateName | yes | no | When user applies custom names, both single or random, Prefix will **skip the original function** (returns false).
+OutsideConnectionAI | GenerateName | yes | no | When user applies any of the both custom name settings Prefix will return false and therefore **skip the original function**.
