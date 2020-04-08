@@ -10,6 +10,12 @@ namespace AdvancedOutsideConnection
     public delegate void DetailsOpenEventHandler(ushort buildingID);
     public static class Utils
     {
+        public static bool IsRoutesViewOn()
+        {
+            return InfoManager.instance.CurrentMode == InfoManager.InfoMode.TrafficRoutes &&
+                InfoManager.instance.CurrentSubMode == InfoManager.SubInfoMode.Default;
+        }
+
         public static AsyncTask<bool> AsyncSetBuildingName(ushort buildingID, string name)
         {
             if (SimulationManager.exists && buildingID != 0)
@@ -41,9 +47,9 @@ namespace AdvancedOutsideConnection
             var flag = building.m_flags & Building.Flags.IncomingOutgoing;
             if (flag == Building.Flags.IncomingOutgoing)
                 return "In&Out";
-            else if (flag == Building.Flags.Incoming)
+            else if (flag == Building.Flags.Outgoing)   // It's from the buildings perspektive, not the cities.
                 return "In";
-            else if (flag == Building.Flags.Outgoing)
+            else if (flag == Building.Flags.Incoming)
                 return "Out";
             return "None";
         }

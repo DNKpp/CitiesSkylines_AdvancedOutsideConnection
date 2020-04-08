@@ -82,7 +82,7 @@ namespace AdvancedOutsideConnection
             m_BottomResizeHandle = WidgetsFactory.AddPanelBottomResizeHandle(m_MainPanel);
             m_OutsideConnectionCountLabel.relativePosition = m_BottomResizeHandle.relativePosition + new Vector3(10, 10);
 
-            m_Caption = WidgetsFactory.AddPanelCaption(m_MainPanel, "Advanced Outside Connections Overview", CommonSpriteNames.IconOutsideConnections.normal);
+            m_Caption = WidgetsFactory.AddPanelCaption(m_MainPanel, "Advanced Outside Connections Overview", CommonSprites.IconOutsideConnections.normal);
             var closeButton = m_Caption.Find<UIButton>("Close");
             closeButton.eventClick += delegate
             {
@@ -161,7 +161,10 @@ namespace AdvancedOutsideConnection
             if (isVisible)
                 OnShow();
             else
-                OnClose();
+            {
+                if (!Utils.IsRoutesViewOn())
+                    OnClose();
+            }
         }
 
         private void OnOutsideConnectionInfoViewPanelPositionChanged(UIComponent comp, Vector2 newPosition)

@@ -21,7 +21,7 @@ namespace AdvancedOutsideConnection
 
                 base.Awake();
 
-                m_DeleteButton = WidgetsFactory.AddButton(m_MainPanel, CommonSpriteNames.IconClose, "Delete");
+                m_DeleteButton = WidgetsFactory.AddButton(m_MainPanel, CommonSprites.IconClose, "Delete");
                 m_DeleteButton.relativePosition = new Vector3(m_MainPanel.width - m_DeleteButton.width, 0);
                 m_DeleteButton.tooltip = "Delete name from random list.";
                 m_DeleteButton.anchor = UIAnchorStyle.Right | UIAnchorStyle.CenterVertical;
@@ -62,6 +62,7 @@ namespace AdvancedOutsideConnection
         private UITextField m_ConnectionNameTextfield = null;
         private UIButton m_PanelClose = null;
         private UIMultiStateButton m_LocationMarkerButton = null;
+        private UIMultiStateButton m_ShowHideRoutesButton = null;
         private UIPanel m_NameGenerationPanel = null;
         private UIResizeHandle m_BottomResizeHandle = null;
         private UIPanel m_NameModeSubPanel = null;
@@ -82,10 +83,15 @@ namespace AdvancedOutsideConnection
 
         private void LateUpdate()
         {
-            if (m_MainPanel.isVisible && m_LocationMarkerButton.isVisible &&
-                m_LocationMarkerButton.activeStateIndex != 0 && ToolsModifierControl.cameraController.GetTarget() == InstanceID.Empty)
+            if (!m_MainPanel.isVisible)
+                return;
+            if (m_LocationMarkerButton && m_LocationMarkerButton.isVisible)
             {
-                m_LocationMarkerButton.activeStateIndex = 0;
+                m_LocationMarkerButton.activeStateIndex = ToolsModifierControl.cameraController.GetTarget() == InstanceID.Empty ? 0 : 1;
+            }
+            if (m_ShowHideRoutesButton)
+            {
+                m_ShowHideRoutesButton.activeStateIndex = (Utils.IsRoutesViewOn() ? 1 : 0);
             }
         }
 
@@ -130,7 +136,7 @@ namespace AdvancedOutsideConnection
         {
             m_SettingsPanel = m_MainPanel.AddUIComponent<UIPanel>();
             m_SettingsPanel.name = "SettingsPanel";
-            m_SettingsPanel.backgroundSprite = CommonSpriteNames.GenericPanel;
+            m_SettingsPanel.backgroundSprite = CommonSprites.GenericPanel;
             m_SettingsPanel.width = m_MainPanel.width - 10;
             m_SettingsPanel.height = 100;
             m_SettingsPanel.color = new Color32(206, 206, 206, 255);
@@ -152,39 +158,70 @@ namespace AdvancedOutsideConnection
             m_DirectionLabel.relativePosition = new Vector3(m_SettingsPanel.width - m_DirectionLabel.width - 10, 10);
             //m_DirectionLabel.backgroundSprite = CommonSpriteNames.EmptySprite;
 
-            m_DirectionInCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "In", Building.Flags.Incoming, OnDirectionCheckboxChanged, "DirectionInCheckBox");
+            m_DirectionInCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "In", Building.Flags.Outgoing, OnDirectionCheckboxChanged, "DirectionInCheckBox");
             m_DirectionInCheckbox.relativePosition = m_DirectionLabel.relativePosition + new Vector3(0, 20);
             m_DirectionInCheckbox.label.textScale = 0.7f;
-            m_DirectionOutCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "Out", Building.Flags.Outgoing, OnDirectionCheckboxChanged, "DirectionOutCheckBox");
+            m_DirectionOutCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "Out", Building.Flags.Incoming, OnDirectionCheckboxChanged, "DirectionOutCheckBox");
             m_DirectionOutCheckbox.relativePosition = m_DirectionInCheckbox.relativePosition + new Vector3(50, 0);
             m_DirectionOutCheckbox.label.textScale = 0.7f;
         }
 
         private void InitCaptionArea()
         {
-            m_PanelIcon = WidgetsFactory.AddPanelIcon(m_MainPanel, CommonSpriteNames.IconOutsideConnections.normal);
+            m_PanelIcon = WidgetsFactory.AddPanelIcon(m_MainPanel, CommonSprites.IconOutsideConnections.normal);
             WidgetsFactory.AddPanelDragHandle(m_MainPanel);
             m_PanelClose = WidgetsFactory.AddPanelCloseButton(m_MainPanel);
             m_PanelClose.eventClick += delegate { OnClose(); };
-            m_LocationMarkerButton = WidgetsFactory.AddMultistateButton(m_MainPanel, CommonSpriteNames.LocationMarkerActive, CommonSpriteNames.LocationMarker, "LocationMarkerButton");
-            m_LocationMarkerButton.relativePosition = new Vector3(m_PanelClose.relativePosition.x - m_LocationMarkerButton.width - 2, 4);
+
+            var backgroundSprites = new CommonSprites.SpriteSet[2];
+            backgroundSprites[0] = new CommonSprites.SpriteSet(CommonSprites.InfoIconBase);
+            backgroundSprites[0].focused = "";
+            backgroundSprites[1] = new CommonSprites.SpriteSet(CommonSprites.InfoIconBase);
+            backgroundSprites[1].focused = "";
+            backgroundSprites[1].normal = CommonSprites.InfoIconBase.focused;
+            var foregroundSprites = new CommonSprites.SpriteSet[2];
+            foregroundSprites[0] = new CommonSprites.SpriteSet(CommonSprites.InfoIconTrafficRoutes);
+            foregroundSprites[0].focused = "";
+            foregroundSprites[1] = new CommonSprites.SpriteSet(CommonSprites.InfoIconTrafficRoutes);
+            foregroundSprites[1].focused = "";
+            foregroundSprites[1].normal = CommonSprites.InfoIconTrafficRoutes.focused;
+            m_ShowHideRoutesButton = WidgetsFactory.AddMultistateButton(m_MainPanel, foregroundSprites, backgroundSprites, "ShowHideRoutesButton");
+            m_ShowHideRoutesButton.relativePosition = new Vector3(m_PanelClose.relativePosition.x - m_ShowHideRoutesButton.width - 2, 4);
+
+            backgroundSprites = new CommonSprites.SpriteSet[2];
+            backgroundSprites[0] = new CommonSprites.SpriteSet(CommonSprites.LocationMarker);
+            backgroundSprites[0].focused = "";
+            backgroundSprites[1] = new CommonSprites.SpriteSet(CommonSprites.LocationMarkerActive);
+            backgroundSprites[1].focused = "";
+            m_LocationMarkerButton = WidgetsFactory.AddMultistateButton(m_MainPanel, null, backgroundSprites, "LocationMarkerButton");
+            m_LocationMarkerButton.relativePosition = new Vector3(m_ShowHideRoutesButton.relativePosition.x - m_LocationMarkerButton.width - 2, 4);
 
             m_ConnectionNameTextfield = WidgetsFactory.AddTextField(m_MainPanel, "Testtext", true);
-            m_ConnectionNameTextfield.size = new Vector2(300, 32);
+            m_ConnectionNameTextfield.size = new Vector2(290, 32);
             m_ConnectionNameTextfield.relativePosition = new Vector3((m_MainPanel.width - m_ConnectionNameTextfield.width) / 2, 5);
             m_ConnectionNameTextfield.anchor = UIAnchorStyle.Top | UIAnchorStyle.Right | UIAnchorStyle.Left;
 
+            m_ShowHideRoutesButton.eventClick += OnShowHideRoutesClicked;
             m_LocationMarkerButton.eventClick += OnLocationMarkerClicked;
             m_MainPanel.eventVisibilityChanged += OnVisibilityChanged;
             m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newName)
             {
-                if (m_CachedSettings != null)
-                {
-                    //Utils.SetBuildingName(buildingID, newName);
-                    //StartCoroutine(Utils.SetBuildingName(buildingID, newName, this));
+                if (m_BuildingID != 0 && m_CachedSettings != null)
                     eventNameChanged?.Invoke(m_BuildingID, newName);
-                }
             };
+        }
+
+        private void OnShowHideRoutesClicked(UIComponent component, UIMouseEventParameter mouseParam)
+        {
+            if (Utils.IsRoutesViewOn())
+            {
+                InfoManager.instance.SetCurrentMode(InfoManager.InfoMode.None, InfoManager.SubInfoMode.Default);
+            }
+            else
+            {
+                SelectOutsideConnectionBuilding();
+                InfoManager.instance.SetCurrentMode(InfoManager.InfoMode.TrafficRoutes, InfoManager.SubInfoMode.Default);
+            }
         }
 
         private void OnClose()
@@ -196,7 +233,7 @@ namespace AdvancedOutsideConnection
         {
             m_NameGenerationPanel = m_MainPanel.AddUIComponent<UIPanel>();
             m_NameGenerationPanel.name = "NameGenerationGroupPanel";
-            m_NameGenerationPanel.backgroundSprite = CommonSpriteNames.GenericPanel;
+            m_NameGenerationPanel.backgroundSprite = CommonSprites.GenericPanel;
             m_NameGenerationPanel.width = m_MainPanel.width - 10;
             m_NameGenerationPanel.height = 300;
             m_NameGenerationPanel.color = new Color32(206, 206, 206, 255);
@@ -233,14 +270,14 @@ namespace AdvancedOutsideConnection
             m_RandomNameContainer.relativePosition = new Vector3(5, label.relativePosition.y + label.height + 15);
             m_RandomNameContainer.width = m_NameModeSubPanel.relativePosition.x - m_RandomNameContainer.relativePosition.x - WidgetsFactory.DefaultVScrollbarWidth - 5;
             m_RandomNameContainer.height = m_NameGenerationPanel.height - m_RandomNameContainer.relativePosition.y - 5;
-            m_RandomNameContainer.backgroundSprite = CommonSpriteNames.EmptySprite;
+            m_RandomNameContainer.backgroundSprite = CommonSprites.EmptySprite;
             m_RandomNameContainer.color = Color.grey;
             m_RandomNameContainerScrollbar = WidgetsFactory.AddVerticalScrollbar(m_NameGenerationPanel, m_RandomNameContainer);
 
             m_SingleNameTextFrame = WidgetsFactory.AddTextField(m_NameGenerationPanel);
             m_SingleNameTextFrame.size = new Vector2(m_RandomNameContainer.width, 45);
             m_SingleNameTextFrame.relativePosition = m_RandomNameContainer.relativePosition;
-            m_SingleNameTextFrame.normalBgSprite = CommonSpriteNames.InfoViewPanel;//CommonSpriteNames.EmptySprite;
+            m_SingleNameTextFrame.normalBgSprite = CommonSprites.InfoViewPanel;//CommonSpriteNames.EmptySprite;
             m_SingleNameTextFrame.color = Color.black;
             m_SingleNameTextFrame.anchor = UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.Top;
             m_SingleNameTextFrame.eventTextSubmitted += OnSingleNameSubmitted;
@@ -334,7 +371,7 @@ namespace AdvancedOutsideConnection
 
             var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
             var building = Utils.QueryBuilding(m_BuildingID);
-            m_PanelIcon.spriteName = CommonSpriteNames.SubBarPublicTransport[(int)transportInfo.m_transportType];
+            m_PanelIcon.spriteName = CommonSprites.SubBarPublicTransport[(int)transportInfo.m_transportType];
             m_ConnectionNameTextfield.text = BuildingManager.instance.GetBuildingName(m_BuildingID, InstanceID.Empty);
             m_TransportTypeLabel.text = transportInfo.m_transportType.ToString();
             m_DirectionInCheckbox.isChecked = (building.m_flags & Building.Flags.Incoming) != 0;
@@ -397,11 +434,7 @@ namespace AdvancedOutsideConnection
             {
                 if (panel == comp)
                 {
-                    if (i + 1 == m_RandomNameContainer.components.Count)
-                    {
-                        // just ignore
-                    }
-                    else
+                    if (i < m_RandomNameContainer.components.Count)
                         m_CachedSettings.RandomGenerationNames.RemoveAt(i);
                     break;
                 }
@@ -433,6 +466,14 @@ namespace AdvancedOutsideConnection
             RefreshData();
         }
 
+        private void SelectOutsideConnectionBuilding()
+        {
+            m_BuildingID = buildingID;
+            var instance = new InstanceID();
+            instance.Building = m_BuildingID;
+            InstanceManager.instance.SelectInstance(instance);
+        }
+
         public void ChangeTarget(ushort buildingID)
         {
             if (buildingID == 0 || !OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(buildingID, out m_CachedSettings))
@@ -443,9 +484,11 @@ namespace AdvancedOutsideConnection
             }
 
             m_BuildingID = buildingID;
-
             RefreshData();
             AdjustNameGenerationComponentVisibility();
+
+            if (m_ShowHideRoutesButton.activeStateIndex == 1)
+                SelectOutsideConnectionBuilding();
         }
 
         private void ZoomToLocation()
@@ -465,7 +508,6 @@ namespace AdvancedOutsideConnection
             {
                 if (m_LocationMarkerButton.activeStateIndex != 1)
                 {
-                    Utils.Log("reset cam");
                     ToolsModifierControl.cameraController.SetTarget(InstanceID.Empty, Vector3.zero, false);
                 }
                 else
@@ -477,7 +519,6 @@ namespace AdvancedOutsideConnection
 
         private void OnVisibilityChanged(UIComponent component, bool isVisibly)
         {
-            enabled = isVisibly;
             if (isVisibly)
             {
                 if (!ToolsModifierControl.cameraController.m_unlimitedCamera)

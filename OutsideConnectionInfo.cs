@@ -91,7 +91,7 @@ namespace AdvancedOutsideConnection
             m_IsRefreshing = true;
 
             var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
-            m_TransportTypeSprite.spriteName = CommonSpriteNames.SubBarPublicTransport[(int)transportInfo.m_transportType];
+            m_TransportTypeSprite.spriteName = CommonSprites.SubBarPublicTransport[(int)transportInfo.m_transportType];
             m_ConnectionNameTextfield.text = BuildingManager.instance.GetBuildingName(m_BuildingID, InstanceID.Empty);
 
             m_DirectionLabel.text = Utils.GetStringForDirectionFlag(m_BuildingID);

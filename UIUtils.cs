@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
-    public static class CommonSpriteNames
+    public static class CommonSprites
     {
         public static readonly string[] SubBarPublicTransport = new string[]
         {
@@ -41,11 +41,11 @@ namespace AdvancedOutsideConnection
 
         public class SpriteSet
         {
-            public readonly string normal;
-            public readonly string disabled;
-            public readonly string focused;
-            public readonly string hovered;
-            public readonly string pressed;
+            public string normal;
+            public string disabled;
+            public string focused;
+            public string hovered;
+            public string pressed;
             
 
             public SpriteSet(string normal, string disabled, string focused, string hovered, string pressed)
@@ -55,6 +55,15 @@ namespace AdvancedOutsideConnection
                 this.focused = focused;
                 this.hovered = hovered;
                 this.pressed = pressed;
+            }
+
+            public SpriteSet(SpriteSet other)
+            {
+                normal = other.normal;
+                disabled = other.normal;
+                focused = other.normal;
+                hovered = other.hovered;
+                pressed = other.pressed;
             }
 
             public UIMultiStateButton.SpriteSet ToMultiStateButtonSpriteSet(UIMultiStateButton button)
@@ -81,7 +90,7 @@ namespace AdvancedOutsideConnection
         public static readonly SpriteSet LocationMarkerActive = new SpriteSet(
             "LocationMarkerActiveNormal",
             "LocationMarkerActiveDisabled",
-            "",//"LocationMarkerActiveFocused",
+            "LocationMarkerActiveFocused",
             "LocationMarkerActiveHovered",
             "LocationMarkerActivePressed"
         );
@@ -89,9 +98,25 @@ namespace AdvancedOutsideConnection
         public static readonly SpriteSet LocationMarker = new SpriteSet(
             "LocationMarkerNormal",
             "LocationMarkerDisabled",
-            "",//"LocationMarkerFocused",
+            "LocationMarkerFocused",
             "LocationMarkerHovered",
             "LocationMarkerPressed"
+        );
+
+        public static readonly SpriteSet InfoIconBase = new SpriteSet(
+            "InfoIconBaseNormal",
+            "InfoIconBaseDisabled",
+            "InfoIconBaseFocused",
+            "InfoIconBaseHovered",
+            "InfoIconBasePressed"
+        );
+
+        public static readonly SpriteSet InfoIconTrafficRoutes = new SpriteSet(
+            "InfoIconTrafficRoutes",
+            "InfoIconTrafficRoutesDisabled",
+            "InfoIconTrafficRoutesFocused",
+            "InfoIconTrafficRoutesHovered",
+            "InfoIconTrafficRoutesPressed"
         );
 
         public static readonly SpriteSet IconClose = new SpriteSet(
@@ -196,7 +221,7 @@ namespace AdvancedOutsideConnection
             return caption;
         }
 
-        public static UIButton AddButton(UIComponent parent, CommonSpriteNames.SpriteSet sprites, string name = "Button")
+        public static UIButton AddButton(UIComponent parent, CommonSprites.SpriteSet sprites, string name = "Button")
         {
             var button = parent.AddUIComponent<UIButton>();
             button.name = name;
@@ -225,7 +250,7 @@ namespace AdvancedOutsideConnection
             newPanel.name = name;
             newPanel.size = size;
             newPanel.clipChildren = true;
-            newPanel.backgroundSprite = CommonSpriteNames.MenuPanel2;
+            newPanel.backgroundSprite = CommonSprites.MenuPanel2;
             return newPanel;
         }
 
@@ -282,13 +307,13 @@ namespace AdvancedOutsideConnection
 
             var sprite = checkbox.AddUIComponent<UISprite>();
             sprite.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left;
-            sprite.spriteName = CommonSpriteNames.CheckBoxUnchecked;
+            sprite.spriteName = CommonSprites.CheckBoxUnchecked;
             sprite.size = new Vector2(16f, 16f);
             sprite.relativePosition = Vector3.zero;
 
             var checkedSprite = checkbox.AddUIComponent<UISprite>();
             checkedSprite.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left;
-            checkedSprite.spriteName = CommonSpriteNames.CheckBoxChecked;
+            checkedSprite.spriteName = CommonSprites.CheckBoxChecked;
             checkedSprite.size = new Vector2(16f, 16f);
             checkedSprite.relativePosition = Vector3.zero;
             checkbox.checkedBoxObject = checkedSprite;
@@ -300,9 +325,6 @@ namespace AdvancedOutsideConnection
         {
             UIPanel subPanel = parent.AddUIComponent<UIPanel>();
             subPanel.name = "CheckBoxPanel";
-            //subPanel.autoLayout = true;
-            //subPanel.autoLayoutDirection = alignVertically ? LayoutDirection.Vertical : LayoutDirection.Horizontal;
-
             var pos = new Vector3(0, 0);
             foreach (var data in textUserData)
             {
@@ -318,8 +340,6 @@ namespace AdvancedOutsideConnection
                     pos.x += checkBox.width + padding;
                 }
             }
-            //subPanel.autoFitChildrenHorizontally = true;
-            //subPanel.autoFitChildrenHorizontally = true;
             return subPanel;
         }
 
@@ -336,34 +356,53 @@ namespace AdvancedOutsideConnection
 
         public static UIButton AddPanelCloseButton(UIPanel parent)
         {
-            var close = AddButton(parent, CommonSpriteNames.IconClose, "Close");
+            var close = AddButton(parent, CommonSprites.IconClose, "Close");
             close.relativePosition = new Vector3(parent.width - close.width - 13, 2);
             close.anchor = UIAnchorStyle.Top | UIAnchorStyle.Right;
             return close;
         }
 
-        public static UIMultiStateButton AddMultistateButton(UIPanel parent, CommonSpriteNames.SpriteSet active, CommonSpriteNames.SpriteSet inactive, string name = "MultistateButton")
+        public static UIMultiStateButton AddMultistateButton(UIPanel parent, CommonSprites.SpriteSet[] foregroundSprites = null, CommonSprites.SpriteSet[] backgroundSprites = null, string name = "MultistateButton")
         {
             var button = parent.AddUIComponent<UIMultiStateButton>();
             button.name = name;
             button.size = new Vector2(32, 32);
             button.textHorizontalAlignment = UIHorizontalAlignment.Center;
             button.textVerticalAlignment = UIVerticalAlignment.Middle;
+            int setCount = Math.Max(Math.Max(1, foregroundSprites == null ? 0 : foregroundSprites.Length), backgroundSprites == null ? 0 : backgroundSprites.Length);
+            button.spritePadding = new RectOffset(0, 0, 0, 0);
+            button.foregroundSpriteMode = UIForegroundSpriteMode.Stretch;
+
             // background sprite states
             var spriteSetList = new List<UIMultiStateButton.SpriteSet>();
-            spriteSetList.Add(inactive.ToMultiStateButtonSpriteSet(button));
-            spriteSetList.Add(active.ToMultiStateButtonSpriteSet(button));
+            for (int i = 0; i < setCount; ++i)
+            {
+                if (backgroundSprites != null && i < backgroundSprites.Length)
+                {
+                    spriteSetList.Add(backgroundSprites[i].ToMultiStateButtonSpriteSet(button));
+                }
+                else
+                    spriteSetList.Add(new UIMultiStateButton.SpriteSet());
+            }
             var spriteSetState = new UIMultiStateButton.SpriteSetState();
             Traverse.Create(spriteSetState).Field<List<UIMultiStateButton.SpriteSet>>("m_SpriteSetStates").Value = spriteSetList;
             Traverse.Create(button).Field<UIMultiStateButton.SpriteSetState>("m_BackgroundSprites").Value = spriteSetState;
 
-            // foreground sprite states; even when we not intend to show sprites in foreground, both lists must have equal list lengths
+            // foreground sprite states
             spriteSetList = new List<UIMultiStateButton.SpriteSet>();
-            spriteSetList.Add(new UIMultiStateButton.SpriteSet());
-            spriteSetList.Add(new UIMultiStateButton.SpriteSet());
+            for (int i = 0; i < setCount; ++i)
+            {
+                if (foregroundSprites != null && i < foregroundSprites.Length)
+                    spriteSetList.Add(foregroundSprites[i].ToMultiStateButtonSpriteSet(button));
+                else
+                    spriteSetList.Add(new UIMultiStateButton.SpriteSet());
+            }
             spriteSetState = new UIMultiStateButton.SpriteSetState();
             Traverse.Create(spriteSetState).Field<List<UIMultiStateButton.SpriteSet>>("m_SpriteSetStates").Value = spriteSetList;
             Traverse.Create(button).Field<UIMultiStateButton.SpriteSetState>("m_ForegroundSprites").Value = spriteSetState;
+
+            button.activeStateIndex = 0;
+
             return button;
         }
 
@@ -399,9 +438,9 @@ namespace AdvancedOutsideConnection
             textfield.readOnly = false;
             textfield.cursorBlinkTime = 0.45f;
             textfield.cursorWidth = 1;
-            textfield.selectionSprite = CommonSpriteNames.EmptySprite;
-            textfield.focusedBgSprite = CommonSpriteNames.TextField.focused;
-            textfield.hoveredBgSprite = CommonSpriteNames.TextField.hovered;
+            textfield.selectionSprite = CommonSprites.EmptySprite;
+            textfield.focusedBgSprite = CommonSprites.TextField.focused;
+            textfield.hoveredBgSprite = CommonSprites.TextField.hovered;
             textfield.selectionBackgroundColor = new Color32(233, 201, 148, 255);
             textfield.allowFloats = false;
             textfield.numericalOnly = false;
@@ -451,14 +490,14 @@ namespace AdvancedOutsideConnection
             scrollbar.stepSize = 1;
             var scrollbarTrack = scrollbar.AddUIComponent<UISlicedSprite>();
             scrollbarTrack.name = "Track";
-            scrollbarTrack.spriteName = CommonSpriteNames.ScrollbarTrack;
+            scrollbarTrack.spriteName = CommonSprites.ScrollbarTrack;
             scrollbarTrack.relativePosition = Vector3.zero;
             scrollbarTrack.size = scrollbar.size;
             scrollbarTrack.anchor = UIAnchorStyle.All;
             scrollbar.trackObject = scrollbarTrack;
             var scrollbarThumb = scrollbarTrack.AddUIComponent<UISlicedSprite>();
             scrollbarThumb.name = "Thumb";
-            scrollbarThumb.spriteName = CommonSpriteNames.ScrollbarThumb;
+            scrollbarThumb.spriteName = CommonSprites.ScrollbarThumb;
             scrollbarThumb.width = scrollbar.width - 6;
             scrollbar.thumbObject = scrollbarThumb;
             scrollabelPanel.verticalScrollbar = scrollbar;
