@@ -103,18 +103,21 @@ namespace AdvancedOutsideConnection
                 SerializableDataExtension.WriteInt32(instance.SettingsDict.Count, buffer);
                 foreach (var keyValue in instance.SettingsDict)
                 {
-                    SerializableDataExtension.WriteUInt16(keyValue.Key, buffer);
-                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.NameMode, buffer);
-                    SerializableDataExtension.WriteString(keyValue.Value.SingleGenerationName, buffer);
+                    FastList<byte> elementBuffer = new FastList<byte>();
+                    SerializableDataExtension.WriteUInt16(keyValue.Key, elementBuffer);
+                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.NameMode, elementBuffer);
+                    SerializableDataExtension.WriteString(keyValue.Value.SingleGenerationName, elementBuffer);
 
-                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.RandomGenerationNames.Count, buffer);
+                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.RandomGenerationNames.Count, elementBuffer);
                     foreach (var str in keyValue.Value.RandomGenerationNames)
                     {
-                        SerializableDataExtension.WriteString(str, buffer);
+                        SerializableDataExtension.WriteString(str, elementBuffer);
                     }
 
-                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.OriginalDirectionFlags, buffer);
-                    SerializableDataExtension.WriteString(keyValue.Value.Name, buffer);
+                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.OriginalDirectionFlags, elementBuffer);
+                    SerializableDataExtension.WriteString(keyValue.Value.Name, elementBuffer);
+
+                    SerializableDataExtension.WriteByteArray(elementBuffer, buffer);
                 }
                 SerializableDataExtension.instance.SerializableData.SaveData(_dataID, buffer.ToArray());
                 Utils.Log("End save data. Version: " + _dataVersion + " bytes written: " + buffer.m_size);
@@ -164,6 +167,9 @@ namespace AdvancedOutsideConnection
             var length = SerializableDataExtension.ReadInt32(buffer, ref index);
             for (int i = 0; i < length; ++i)
             {
+                var curElementLength = SerializableDataExtension.ReadInt32(buffer, ref index);
+                var indexBegin = index;
+
                 var settings = new OutsideConnectionSettings();
                 var buildingID = SerializableDataExtension.ReadUInt16(buffer, ref index);
                 settings.NameMode = (OutsideConnectionSettings.NameModeType)SerializableDataExtension.ReadUInt16(buffer, ref index);

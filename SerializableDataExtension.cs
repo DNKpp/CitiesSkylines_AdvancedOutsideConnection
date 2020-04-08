@@ -157,6 +157,22 @@ namespace AdvancedOutsideConnection
             return numArray;
         }
 
+        public static void WriteByteArray(FastList<byte> array, FastList<byte> data)
+        {
+            SerializableDataExtension.WriteInt32(array.m_size, data);
+            for (int index = 0; index < array.m_size; ++index)
+                SerializableDataExtension.WriteByte(array[index], data);
+        }
+
+        public static byte[] ReadByteArray(byte[] data, ref int index)
+        {
+            int length = SerializableDataExtension.ReadInt32(data, ref index);
+            byte[] numArray = new byte[length];
+            for (int index1 = 0; index1 < length; ++index1)
+                numArray[index1] = SerializableDataExtension.ReadByte(data, ref index);
+            return numArray;
+        }
+
         public static void AddToData(byte[] bytes, FastList<byte> data)
         {
             foreach (byte num in bytes)
