@@ -313,6 +313,7 @@ namespace AdvancedOutsideConnection
             sprite.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left;
             sprite.spriteName = CommonSprites.CheckBoxUnchecked;
             sprite.size = new Vector2(16f, 16f);
+            sprite.disabledColor = Color.grey;
             sprite.relativePosition = Vector3.zero;
 
             var checkedSprite = checkbox.AddUIComponent<UISprite>();
@@ -320,6 +321,7 @@ namespace AdvancedOutsideConnection
             checkedSprite.spriteName = CommonSprites.CheckBoxChecked;
             checkedSprite.size = new Vector2(16f, 16f);
             checkedSprite.relativePosition = Vector3.zero;
+            checkedSprite.disabledColor = Color.grey;
             checkbox.checkedBoxObject = checkedSprite;
 
             return checkbox;
