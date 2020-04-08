@@ -321,12 +321,18 @@ namespace AdvancedOutsideConnection
             if (m_BuildingID == 0 || m_CachedSettings == null)
                 return;
 
-            m_IsRefreshing = true;
+            var connectionAI = Utils.QueryBuildingAI(buildingID) as OutsideConnectionAI;
+            if (connectionAI == null)
+            {
+                m_BuildingID = 0;
+                m_CachedSettings = null;
+                return;
+            }
 
-            var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
-            m_PanelIcon.spriteName = CommonSprites.SubBarPublicTransport[(int)transportInfo.m_transportType];
+            m_IsRefreshing = true;
+            m_PanelIcon.spriteName = Utils.GetSpriteNameForTransferReason(connectionAI.m_dummyTrafficReason);
             m_ConnectionNameTextfield.text = m_CachedSettings.Name;
-            m_TransportTypeLabel.text = transportInfo.m_transportType.ToString();
+            m_TransportTypeLabel.text = Utils.GetNameForTransferReason(connectionAI.m_dummyTrafficReason);
             RefreshDirectionCheckbox(m_DirectionInCheckbox);
             RefreshDirectionCheckbox(m_DirectionOutCheckbox);
 
@@ -378,6 +384,16 @@ namespace AdvancedOutsideConnection
             m_IsRefreshing = false;
         }
 
+        private void ZoomToLocation()
+        {
+            if (m_BuildingID == 0)
+                return;
+
+            var building = BuildingManager.instance.m_buildings.m_buffer[m_BuildingID];
+            var instanceID = default(InstanceID);
+            instanceID.Building = m_BuildingID;
+            ToolsModifierControl.cameraController.SetTarget(instanceID, building.m_position, false);
+        }
         public void ChangeTarget(ushort buildingID)
         {
             if (buildingID == 0 || !OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(buildingID, out m_CachedSettings))
@@ -396,17 +412,6 @@ namespace AdvancedOutsideConnection
 
             if (m_LocationMarkerButton.activeStateIndex == 1)
                 ZoomToLocation();
-        }
-
-        private void ZoomToLocation()
-        {
-            if (m_BuildingID == 0)
-                return;
-
-            var building = BuildingManager.instance.m_buildings.m_buffer[m_BuildingID];
-            var instanceID = default(InstanceID);
-            instanceID.Building = m_BuildingID;
-            ToolsModifierControl.cameraController.SetTarget(instanceID, building.m_position, false);
         }
 
         private void OnShowHideRoutesClicked(UIComponent component, UIMouseEventParameter mouseParam)
@@ -445,9 +450,10 @@ namespace AdvancedOutsideConnection
                 buildingFlags &= ~flag;
             Utils.Log("flag after: " + buildingFlags);
 
+            m_CachedSettings.CurrentDirectionFlags = buildingFlags & Building.Flags.IncomingOutgoing;
             BuildingManager.instance.m_buildings.m_buffer[m_BuildingID].m_flags = buildingFlags;     // need to push back the copy
 
-            eventDirectionChanged?.Invoke(m_BuildingID, buildingFlags & Building.Flags.IncomingOutgoing);
+            eventDirectionChanged?.Invoke(m_BuildingID, m_CachedSettings.CurrentDirectionFlags);
         }
 
         private void OnSingleNameSubmitted(UIComponent component, string text)

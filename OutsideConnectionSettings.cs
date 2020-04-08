@@ -27,7 +27,9 @@ namespace AdvancedOutsideConnection
         public List<string> RandomGenerationNames { get; set; } = new List<string>();
         public string SingleGenerationName { get; set; } = "";
 
+        // Cache original direction flags; won't be serialized
         public Building.Flags OriginalDirectionFlags;
+        public Building.Flags CurrentDirectionFlags;
 
         // When a custom building name is applied, the GenerateName function won't be called.
         // Let's just introduce a custom Name instead, so we don't have to patch the more central
@@ -69,13 +71,18 @@ namespace AdvancedOutsideConnection
 
         public void SyncWithBuildingManager()
         {
-            var typeCount = new int[Utils.MaxEnumValue<TransportInfo.TransportType>() + 1];
+            var typeCount = new int[Utils.MaxEnumValue<TransferManager.TransferReason>() + 1];
             var oldSettingsDict = m_SettingsDict;
             m_SettingsDict = new Dictionary<ushort, OutsideConnectionSettings>();
             foreach (var buildingID in BuildingManager.instance.GetOutsideConnections())
             {
+                var connectionAI = Utils.QueryBuildingAI(buildingID) as OutsideConnectionAI;
+                if (connectionAI == null)
+                    continue;
+
+                var transferReason = connectionAI.m_dummyTrafficReason;
+
                 OutsideConnectionSettings settings;
-                var transportType = Utils.QueryTransportInfo(buildingID).m_transportType;
                 if (oldSettingsDict.TryGetValue(buildingID, out settings))
                 {
                     m_SettingsDict.Add(buildingID, settings);
@@ -83,13 +90,13 @@ namespace AdvancedOutsideConnection
                 else
                 {
                     settings = new OutsideConnectionSettings();
-
-                    settings.Name = transportType.ToString() + "-Outside Connection " + (typeCount[(int)transportType] + 1);
+                    settings.Name = Utils.GetNameForTransferReason(transferReason) + "-Outside Connection " + (typeCount[(int)transferReason] + 1);
                     var building = Utils.QueryBuilding(buildingID);
-                    settings.OriginalDirectionFlags = building.m_flags & Building.Flags.IncomingOutgoing;
+                    settings.CurrentDirectionFlags = building.m_flags & Building.Flags.IncomingOutgoing;
+                    settings.OriginalDirectionFlags = settings.CurrentDirectionFlags;
                     m_SettingsDict.Add(buildingID, settings);
                 }
-                ++typeCount[(int)transportType];
+                ++typeCount[(int)transferReason];
             }
         }
 
@@ -114,7 +121,7 @@ namespace AdvancedOutsideConnection
                         SerializableDataExtension.WriteString(str, elementBuffer);
                     }
 
-                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.OriginalDirectionFlags, elementBuffer);
+                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.CurrentDirectionFlags, elementBuffer);
                     SerializableDataExtension.WriteString(keyValue.Value.Name, elementBuffer);
 
                     SerializableDataExtension.WriteByteArray(elementBuffer, buffer);
@@ -181,8 +188,16 @@ namespace AdvancedOutsideConnection
                     settings.RandomGenerationNames.Add(SerializableDataExtension.ReadString(buffer, ref index));
                 }
 
-                settings.OriginalDirectionFlags = (Building.Flags)SerializableDataExtension.ReadUInt16(buffer, ref index);
+                settings.CurrentDirectionFlags = (Building.Flags)SerializableDataExtension.ReadUInt16(buffer, ref index) & Building.Flags.IncomingOutgoing;
                 settings.Name = SerializableDataExtension.ReadString(buffer, ref index);
+
+                var flags = Utils.QueryBuilding(buildingID).m_flags;
+                Utils.Log("current flags read: " + settings.CurrentDirectionFlags + " flags from building:" + flags);
+
+                settings.OriginalDirectionFlags = flags & Building.Flags.IncomingOutgoing;
+                flags &= (~Building.Flags.IncomingOutgoing) | settings.CurrentDirectionFlags;
+                BuildingManager.instance.m_buildings.m_buffer[buildingID].m_flags = flags;
+                Utils.Log("flags now: " + BuildingManager.instance.m_buildings.m_buffer[buildingID].m_flags);
 
                 settingsDict.Add(buildingID, settings);
             }

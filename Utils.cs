@@ -35,10 +35,33 @@ namespace AdvancedOutsideConnection
             return BuildingManager.instance.m_buildings.m_buffer[buildingID];
         }
 
-        public static string GetStringForDirectionFlag(ushort buildingID)
+        public static string GetSpriteNameForTransferReason(TransferManager.TransferReason reason)
         {
-            var building = QueryBuilding(buildingID);
-            var flag = building.m_flags & Building.Flags.IncomingOutgoing;
+            switch (reason)
+            {
+                case TransferManager.TransferReason.DummyCar: return CommonSprites.SubBarRoadsHighway.normal;
+                case TransferManager.TransferReason.DummyPlane: return CommonSprites.SubBarPublicTransportPlane.normal;
+                case TransferManager.TransferReason.DummyTrain: return CommonSprites.SubBarPublicTransportTrain.normal;
+                case TransferManager.TransferReason.DummyShip: return CommonSprites.SubBarPublicTransportShip.normal;
+            }
+            return "";
+        }
+
+        public static string GetNameForTransferReason(TransferManager.TransferReason reason)
+        {
+            switch (reason)
+            {
+                case TransferManager.TransferReason.DummyCar: return "Road";
+                case TransferManager.TransferReason.DummyPlane: return "Plane";
+                case TransferManager.TransferReason.DummyTrain: return "Train";
+                case TransferManager.TransferReason.DummyShip: return "Ship";
+            }
+            return "Invalid";
+        }
+
+        public static string GetStringForDirectionFlag(Building.Flags directionFlags)
+        {
+            var flag = directionFlags & Building.Flags.IncomingOutgoing;
             if (flag == Building.Flags.IncomingOutgoing)
                 return "In&Out";
             else if (flag == Building.Flags.Outgoing)   // It's from the buildings perspektive, not the cities.

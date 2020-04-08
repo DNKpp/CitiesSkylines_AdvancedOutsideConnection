@@ -97,13 +97,21 @@ namespace AdvancedOutsideConnection
             if (m_BuildingID == 0 || !OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(m_BuildingID, out m_CachedSettings))
                 return;
 
+            var connectionAI = Utils.QueryBuildingAI(buildingID) as OutsideConnectionAI;
+            if (connectionAI == null)
+            {
+                m_BuildingID = 0;
+                m_CachedSettings = null;
+                return;
+            }
+
             m_IsRefreshing = true;
 
             var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
-            m_TransportTypeSprite.spriteName = CommonSprites.SubBarPublicTransport[(int)transportInfo.m_transportType];
+            m_TransportTypeSprite.spriteName = Utils.GetSpriteNameForTransferReason(connectionAI.m_dummyTrafficReason);
             m_ConnectionNameTextfield.text = m_CachedSettings.Name;
 
-            m_DirectionLabel.text = Utils.GetStringForDirectionFlag(m_BuildingID);
+            m_DirectionLabel.text = Utils.GetStringForDirectionFlag(Utils.QueryBuilding(m_BuildingID).m_flags);
 
             m_IsRefreshing = false;
         }
