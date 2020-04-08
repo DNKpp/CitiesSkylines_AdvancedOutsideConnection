@@ -393,6 +393,9 @@ namespace AdvancedOutsideConnection
 
             if (m_ShowHideRoutesButton.activeStateIndex == 1)
                 SelectOutsideConnectionBuilding();
+
+            if (m_LocationMarkerButton.activeStateIndex == 1)
+                ZoomToLocation();
         }
 
         private void ZoomToLocation()
@@ -403,7 +406,7 @@ namespace AdvancedOutsideConnection
             var building = BuildingManager.instance.m_buildings.m_buffer[m_BuildingID];
             var instanceID = default(InstanceID);
             instanceID.Building = m_BuildingID;
-            ToolsModifierControl.cameraController.SetTarget(instanceID, building.m_position, true);
+            ToolsModifierControl.cameraController.SetTarget(instanceID, building.m_position, false);
         }
 
         private void OnShowHideRoutesClicked(UIComponent component, UIMouseEventParameter mouseParam)
