@@ -24,4 +24,5 @@ The following patches will be applied:
 
 Class | Function | Prefix | Postfix | Description
 ------|----------|--------|---------|----------------
-OutsideConnectionAI | GenerateName | no | yes | When user applies any of the two custom name settings, Postfix function will **override the returned string**.
+OutsideConnectionAI | GenerateName | no | yes | If user applies any of the two custom name settings, Postfix function will **override the returned string**.
+OutsideConnectionAI | AddConnectionOffers | yes | no | If user applies a custom setting for the DummyTrafficFactor, this parameter will be manipulated.
