@@ -31,6 +31,8 @@ namespace AdvancedOutsideConnection
         public Building.Flags OriginalDirectionFlags;
         public Building.Flags CurrentDirectionFlags;
 
+        public int DummyTrafficFactor = -1;
+
         // When a custom building name is applied, the GenerateName function won't be called.
         // Let's just introduce a custom Name instead, so we don't have to patch the more central
         // GetBuildingName function and can simply rely on OutsideConnectionAI.GenerateName.
@@ -40,7 +42,7 @@ namespace AdvancedOutsideConnection
     class OutsideConnectionSettingsManager : Singleton<OutsideConnectionSettingsManager>
     {
         private static readonly string _dataID = "AOC_Data";
-        private static readonly ushort _dataVersion = 1;
+        private static readonly ushort _dataVersion = 2;
 
         private Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict = null;
 
@@ -123,6 +125,7 @@ namespace AdvancedOutsideConnection
 
                     SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.CurrentDirectionFlags, elementBuffer);
                     SerializableDataExtension.WriteString(keyValue.Value.Name, elementBuffer);
+                    SerializableDataExtension.WriteInt32(keyValue.Value.DummyTrafficFactor, elementBuffer);     // addition with version 2
 
                     SerializableDataExtension.WriteByteArray(elementBuffer, buffer);
                 }
@@ -153,14 +156,12 @@ namespace AdvancedOutsideConnection
                 var version = SerializableDataExtension.ReadUInt16(buffer, ref index);
                 Utils.Log("Start deserialize data. Version: " + version + " bytes read: " + buffer.Length);
 
-                switch (version)
+                if (version >= 1)
                 {
-                    case 1:
-                        return TryLoadData1(ref settingsDict, ref buffer, ref index);
-                    default:
-                        Utils.LogError("No protocol defined for version: " + version);
-                        break;
+                    return TryLoadData1(version, ref settingsDict, ref buffer, ref index);
                 }
+                else
+                    Utils.LogError("No protocol defined for version: " + version);
             }
             catch (Exception ex)
             {
@@ -169,7 +170,7 @@ namespace AdvancedOutsideConnection
             return false;
         }
 
-        private static bool TryLoadData1(ref Dictionary<ushort, OutsideConnectionSettings> settingsDict, ref byte[] buffer, ref int index)
+        private static bool TryLoadData1(int version, ref Dictionary<ushort, OutsideConnectionSettings> settingsDict, ref byte[] buffer, ref int index)
         {
             var length = SerializableDataExtension.ReadInt32(buffer, ref index);
             for (int i = 0; i < length; ++i)
@@ -198,6 +199,11 @@ namespace AdvancedOutsideConnection
                 flags &= (~Building.Flags.IncomingOutgoing) | settings.CurrentDirectionFlags;
                 BuildingManager.instance.m_buildings.m_buffer[buildingID].m_flags = flags;
                 Utils.Log("flags now: " + BuildingManager.instance.m_buildings.m_buffer[buildingID].m_flags);
+
+                if (version >= 2)
+                {
+                    settings.DummyTrafficFactor = SerializableDataExtension.ReadInt32(buffer, ref index);
+                }
 
                 settingsDict.Add(buildingID, settings);
             }

@@ -81,6 +81,7 @@ namespace AdvancedOutsideConnection
         private UICheckBox m_DirectionInCheckbox = null;
         private UICheckBox m_DirectionOutCheckbox = null;
         private UILabel m_TransportTypeLabel = null;
+        private UITextField m_DummyTrafficFactorTextfield = null;
 
         private bool m_Initialized = false;
         private bool m_IsRefreshing = false;
@@ -142,6 +143,7 @@ namespace AdvancedOutsideConnection
             m_TransportTypeLabel.autoSize = true;
             m_TransportTypeLabel.textScale = 0.7f;
             m_TransportTypeLabel.relativePosition = new Vector3(10, 10);
+            m_TransportTypeLabel.anchor = UIAnchorStyle.Left | UIAnchorStyle.Top;
 
             m_DirectionLabel = WidgetsFactory.AddLabel(m_SettingsPanel, "", false, "DirectionLabel");
             m_DirectionLabel.text = "Direction";
@@ -151,14 +153,35 @@ namespace AdvancedOutsideConnection
             m_DirectionLabel.textAlignment = UIHorizontalAlignment.Center;
             m_DirectionLabel.textScale = 0.7f;
             m_DirectionLabel.relativePosition = new Vector3(m_SettingsPanel.width - m_DirectionLabel.width - 10, 10);
+            m_DirectionLabel.anchor = UIAnchorStyle.Right | UIAnchorStyle.Top;
             //m_DirectionLabel.backgroundSprite = CommonSpriteNames.EmptySprite;
 
             m_DirectionInCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "In", Building.Flags.Outgoing, OnDirectionCheckboxChanged, "DirectionInCheckBox");
             m_DirectionInCheckbox.relativePosition = m_DirectionLabel.relativePosition + new Vector3(0, 20);
             m_DirectionInCheckbox.label.textScale = 0.7f;
+            m_DirectionInCheckbox.anchor = UIAnchorStyle.Right | UIAnchorStyle.Top;
             m_DirectionOutCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "Out", Building.Flags.Incoming, OnDirectionCheckboxChanged, "DirectionOutCheckBox");
             m_DirectionOutCheckbox.relativePosition = m_DirectionInCheckbox.relativePosition + new Vector3(50, 0);
             m_DirectionOutCheckbox.label.textScale = 0.7f;
+            m_DirectionOutCheckbox.anchor = UIAnchorStyle.Right | UIAnchorStyle.Top;
+
+            var dummyTrafficFactorLabel = WidgetsFactory.AddLabel(m_SettingsPanel, "Dummy Traffic Factor: ", false, "DummyTrafficFactorLabel");
+            dummyTrafficFactorLabel.autoSize = true;
+            dummyTrafficFactorLabel.textScale = 0.7f;
+            dummyTrafficFactorLabel.relativePosition = m_TransportTypeLabel.relativePosition + new Vector3(0, 25);
+            m_TransportTypeLabel.anchor = UIAnchorStyle.Left | UIAnchorStyle.Top;
+
+            m_DummyTrafficFactorTextfield = WidgetsFactory.AddNumericTextField(m_SettingsPanel, 0, false, false, "DummyTrafficFactorTextfield");
+            m_DummyTrafficFactorTextfield.relativePosition = dummyTrafficFactorLabel.relativePosition + new Vector3(dummyTrafficFactorLabel.width + 5, -5);
+            m_DummyTrafficFactorTextfield.normalBgSprite = CommonSprites.InfoViewPanel;
+            m_DummyTrafficFactorTextfield.textScale = 0.7f;
+            m_DummyTrafficFactorTextfield.color = Color.black;
+            m_DummyTrafficFactorTextfield.textColor = Color.white;
+            m_DummyTrafficFactorTextfield.size = new Vector2(75, 20);
+            m_DummyTrafficFactorTextfield.padding = new RectOffset(0, 0, 5, 5);
+            m_DummyTrafficFactorTextfield.tooltip = "Modifies the factor of the dummy traffic. Value is clamped between 0 and 1.000.000.";
+            m_DummyTrafficFactorTextfield.anchor = UIAnchorStyle.Left | UIAnchorStyle.Top;
+            m_DummyTrafficFactorTextfield.eventTextSubmitted += OnDummyTrafficFactorChanged;
         }
 
         private void InitCaptionArea()
@@ -335,6 +358,9 @@ namespace AdvancedOutsideConnection
             m_TransportTypeLabel.text = Utils.GetNameForTransferReason(connectionAI.m_dummyTrafficReason);
             RefreshDirectionCheckbox(m_DirectionInCheckbox);
             RefreshDirectionCheckbox(m_DirectionOutCheckbox);
+            var dummyTrafficFactor = m_CachedSettings.DummyTrafficFactor < 0 ? connectionAI.m_dummyTrafficFactor : m_CachedSettings.DummyTrafficFactor;
+            m_DummyTrafficFactorTextfield.text = dummyTrafficFactor.ToString();
+
 
             foreach (var comp in m_NameModeSubPanel.components)
             {
@@ -394,6 +420,7 @@ namespace AdvancedOutsideConnection
             instanceID.Building = m_BuildingID;
             ToolsModifierControl.cameraController.SetTarget(instanceID, building.m_position, false);
         }
+
         public void ChangeTarget(ushort buildingID)
         {
             if (buildingID == 0 || !OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(buildingID, out m_CachedSettings))
@@ -412,6 +439,28 @@ namespace AdvancedOutsideConnection
 
             if (m_LocationMarkerButton.activeStateIndex == 1)
                 ZoomToLocation();
+        }
+
+        private void OnDummyTrafficFactorChanged(UIComponent component, string newText)
+        {
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            var buildingAI = Utils.QueryBuildingAI(m_BuildingID) as OutsideConnectionAI;
+            if (string.IsNullOrEmpty(newText))
+            {
+                m_CachedSettings.DummyTrafficFactor = buildingAI.m_dummyTrafficFactor;
+            }
+            else
+            {
+                var newValue = Mathf.Clamp(int.Parse(newText), 0, 1000000);
+                if (newValue == buildingAI.m_dummyTrafficFactor)
+                {
+                    m_CachedSettings.DummyTrafficFactor = buildingAI.m_dummyTrafficFactor;
+                }
+                else
+                    m_CachedSettings.DummyTrafficFactor = newValue;
+            }
         }
 
         private void OnShowHideRoutesClicked(UIComponent component, UIMouseEventParameter mouseParam)
