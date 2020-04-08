@@ -24,4 +24,4 @@ The following patches will be applied:
 
 Class | Function | Prefix | Postfix | Description
 ------|----------|--------|---------|----------------
-OutsideConnectionAI | GenerateName | yes | no | When user applies any of the both custom name settings Prefix will return false and therefore **skip the original function**.
+OutsideConnectionAI | GenerateName | no | yes | When user applies any of the two custom name settings, Postfix function will **override the returned string**.
