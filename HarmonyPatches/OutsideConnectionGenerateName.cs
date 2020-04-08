@@ -26,7 +26,7 @@ namespace AdvancedOutsideConnection.HarmonyPatches
                             if (setting.SingleGenerationName != string.Empty)
                             {
                                 __result = setting.SingleGenerationName;
-                                return false;
+                                return false;   // Well, we skip the original code, because it isn't necessary and this way we safe some performance. Are there any good reasons not to do?
                             }
                             break;
                         }
@@ -37,7 +37,7 @@ namespace AdvancedOutsideConnection.HarmonyPatches
                             {
                                 Randomizer r = new Randomizer(caller.Index);
                                 __result = setting.RandomGenerationNames[r.Int32((uint)setting.RandomGenerationNames.Count)];
-                                return false;
+                                return false;   // Well, we skip the original code, because it isn't necessary and this way we safe some performance. Are there any good reasons not to do?
                             }
                             break;
                         }
@@ -50,7 +50,7 @@ namespace AdvancedOutsideConnection.HarmonyPatches
             else
                 Utils.Log("AdvancedOutsideConnection: GenerateName: No settings for OutsideConnection found.");
 
-            return true;    // Well, we skip the original code, because it isn't necessary and this way we safe some performance. Are there any good reasons not to do?
+            return true;
         }
     }
 }
