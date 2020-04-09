@@ -96,6 +96,8 @@ namespace AdvancedOutsideConnection
                     var building = Utils.QueryBuilding(buildingID);
                     settings.CurrentDirectionFlags = building.m_flags & Building.Flags.IncomingOutgoing;
                     settings.OriginalDirectionFlags = settings.CurrentDirectionFlags;
+                    settings.DummyTrafficFactor = connectionAI.m_dummyTrafficFactor;
+
                     m_SettingsDict.Add(buildingID, settings);
                 }
                 ++typeCount[(int)transferReason];

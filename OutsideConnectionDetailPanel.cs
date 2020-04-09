@@ -334,9 +334,28 @@ namespace AdvancedOutsideConnection
 
         private void RefreshDirectionCheckbox(UICheckBox checkbox)
         {
+            var oldIsRefreshing = m_IsRefreshing;
+            m_IsRefreshing = true;
+
             var building = Utils.QueryBuilding(m_BuildingID);
             checkbox.isChecked = (building.m_flags & (Building.Flags)checkbox.objectUserData) != 0;
             checkbox.isEnabled = (m_CachedSettings.OriginalDirectionFlags & (Building.Flags)checkbox.objectUserData) != 0;
+
+            m_IsRefreshing = oldIsRefreshing;
+        }
+
+        private void RefreshDummyTrafficFactorTextfield()
+        {
+            var oldIsRefreshing = m_IsRefreshing;
+            m_IsRefreshing = true;
+
+            Utils.Log("Refreshing textfield");
+
+            var connectionAI = Utils.QueryBuildingAI(buildingID) as OutsideConnectionAI;
+            var dummyTrafficFactor = m_CachedSettings.DummyTrafficFactor < 0 ? connectionAI.m_dummyTrafficFactor : m_CachedSettings.DummyTrafficFactor;
+            m_DummyTrafficFactorTextfield.text = dummyTrafficFactor.ToString();
+
+            m_IsRefreshing = oldIsRefreshing;
         }
 
         public void RefreshData()
@@ -358,8 +377,7 @@ namespace AdvancedOutsideConnection
             m_TransportTypeLabel.text = Utils.GetNameForTransferReason(connectionAI.m_dummyTrafficReason);
             RefreshDirectionCheckbox(m_DirectionInCheckbox);
             RefreshDirectionCheckbox(m_DirectionOutCheckbox);
-            var dummyTrafficFactor = m_CachedSettings.DummyTrafficFactor < 0 ? connectionAI.m_dummyTrafficFactor : m_CachedSettings.DummyTrafficFactor;
-            m_DummyTrafficFactorTextfield.text = dummyTrafficFactor.ToString();
+            RefreshDummyTrafficFactorTextfield();
 
 
             foreach (var comp in m_NameModeSubPanel.components)
@@ -453,14 +471,11 @@ namespace AdvancedOutsideConnection
             }
             else
             {
-                var newValue = Mathf.Clamp(int.Parse(newText), 0, 1000000);
-                if (newValue == buildingAI.m_dummyTrafficFactor)
-                {
-                    m_CachedSettings.DummyTrafficFactor = buildingAI.m_dummyTrafficFactor;
-                }
-                else
-                    m_CachedSettings.DummyTrafficFactor = newValue;
+                if (int.TryParse(newText, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out int value))
+                    m_CachedSettings.DummyTrafficFactor = Mathf.Clamp(value, 0, 1000000);
             }
+
+            RefreshDummyTrafficFactorTextfield();
         }
 
         private void OnShowHideRoutesClicked(UIComponent component, UIMouseEventParameter mouseParam)
