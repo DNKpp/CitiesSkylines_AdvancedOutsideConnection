@@ -195,19 +195,18 @@ namespace AdvancedOutsideConnection
                 settings.Name = SerializableDataExtension.ReadString(buffer, ref index);
 
                 var flags = Utils.QueryBuilding(buildingID).m_flags;
-                Utils.Log("current flags read: " + settings.CurrentDirectionFlags + " flags from building:" + flags);
-
                 settings.OriginalDirectionFlags = flags & Building.Flags.IncomingOutgoing;
                 flags &= (~Building.Flags.IncomingOutgoing) | settings.CurrentDirectionFlags;
                 BuildingManager.instance.m_buildings.m_buffer[buildingID].m_flags = flags;
-                Utils.Log("flags now: " + BuildingManager.instance.m_buildings.m_buffer[buildingID].m_flags);
 
                 if (version >= 2)
                 {
                     settings.DummyTrafficFactor = SerializableDataExtension.ReadInt32(buffer, ref index);
                 }
 
-                settingsDict.Add(buildingID, settings);
+                if (settingsDict.ContainsKey(buildingID))
+                    Utils.LogWarning("Overrides existing outside connection with buildingID: " + buildingID);
+                settingsDict[buildingID] = settings;
             }
             return true;
         }
