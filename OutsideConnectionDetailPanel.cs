@@ -6,6 +6,7 @@
 
 using ColossalFramework.UI;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AdvancedOutsideConnection
@@ -87,6 +88,8 @@ namespace AdvancedOutsideConnection
         private UILabel m_TransportTypeLabel = null;
         private UITextField m_DummyTrafficFactorTextfield = null;
         private UICheckBox[] m_NameModeCheckBoxes = null;
+        private UITextField[] m_TouristFactorTextFields = null;
+        private UILabel[] m_TouristFactorLabels = null;
 
         private bool m_Initialized = false;
         private bool m_IsRefreshing = false;
@@ -203,7 +206,7 @@ namespace AdvancedOutsideConnection
                 SetName("SettingsPanel").
                 SetBackgroundSprite(fw.CommonSprites.GenericPanel).
                 SetColor(fw.ui.UIHelper.contenPanelColor).
-                SetSize(new Vector2(m_MainPanel.width - 10, 100)).
+                SetSize(new Vector2(m_MainPanel.width - 10, 120)).
                 SetRelativeX(5).
                 MoveBottomOf(m_PanelIcon, 2).
                 SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top | UIAnchorStyle.Right).
@@ -276,6 +279,153 @@ namespace AdvancedOutsideConnection
                 SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
                 GetTextField(true);
             m_DummyTrafficFactorTextfield.eventTextSubmitted += OnDummyTrafficFactorChanged;
+
+            InitTouristSubPanel();
+        }
+
+        private void InitTouristSubPanel()
+        {
+            var touristPanel = fw.ui.UIHelper.AddPanel(m_SettingsPanel).
+                SetName("TouristSubPanel").
+                SetBackgroundSprite(fw.CommonSprites.GenericPanel).
+                SetColor(Color.white).
+                SetRelativeX(5).
+                MoveBottomOf(m_DummyTrafficFactorTextfield, 5).
+                SpanInnerBottom(m_SettingsPanel, 5).
+                SpanInnerRight(m_DummyTrafficFactorTextfield).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Bottom).
+                GetPanel();
+
+            var touristIcon = fw.ui.UIHelper.AddSprite(touristPanel).
+                SetName("TouristIcon").
+                SetSpriteName(fw.CommonSprites.IconTourist).
+                SetColor(Color.gray).
+                SetSize(new Vector2(36, 36)).
+                MoveInnerTopLeftOf(touristPanel, new Vector3(- 5, -5)).
+                GetSprite();
+
+            var wealthyIconSize = new Vector2(24, 24);
+
+            var lowWealthyIcon = fw.ui.UIHelper.AddSprite(touristPanel).
+                SetName("LowWealthyIcon").
+                SetSpriteName(fw.CommonSprites.InfoIconLandValue.disabled).
+                SetSize(wealthyIconSize).
+                MoveRightOf(touristIcon).
+                SetRelativeY(0).
+                GetSprite();
+
+            var mediumWealthyIcon = fw.ui.UIHelper.AddSprite(touristPanel).
+                SetName("MediumWealthyIcon").
+                SetSpriteName(fw.CommonSprites.InfoIconLandValue.focused).
+                SetSize(wealthyIconSize).
+                SetRelativeX(lowWealthyIcon.relativePosition.x).
+                MoveBottomOf(lowWealthyIcon, -3).
+                GetSprite();
+
+            var highWealthyIcon = fw.ui.UIHelper.AddSprite(touristPanel).
+                SetName("HighWealthyIcon").
+                SetSpriteName(fw.CommonSprites.InfoIconLandValue.normal).
+                SetSize(wealthyIconSize).
+                SetRelativeX(mediumWealthyIcon.relativePosition.x).
+                MoveBottomOf(mediumWealthyIcon, -3).
+                GetSprite();
+
+            var wealthyTextFieldPadding = new RectOffset(0, 0, 5, 5);
+            var wealthyTextScale = 0.7f;
+            var lowWealthyTextField = fw.ui.UIHelper.AddTextField(touristPanel).
+                SetName("LowWealthySlider").
+                SetTooltip("Adjust low wealthy tourist factor. Value is clamped between 0 and 1.000.000.").
+                SetTextScale(wealthyTextScale).
+                SetNormalBgSprite(fw.CommonSprites.InfoViewPanel).
+                SetColor(Color.black).
+                SetTextColor(Color.white).
+                SetPadding(wealthyTextFieldPadding).
+                SetNumericalOnly(true).
+                MoveRightOf(lowWealthyIcon, 5).
+                SetRelativeY(lowWealthyIcon.relativePosition.y + 2).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
+                GetTextField(true);
+
+            var mediumWealthyTextField = fw.ui.UIHelper.AddTextField(touristPanel).
+                SetName("MediumWealthySlider").
+                SetTooltip("Adjust medium wealthy tourist factor. Value is clamped between 0 and 1.000.000.").
+                SetTextScale(wealthyTextScale).
+                SetNormalBgSprite(fw.CommonSprites.InfoViewPanel).
+                SetColor(Color.black).
+                SetTextColor(Color.white).
+                SetPadding(wealthyTextFieldPadding).
+                SetNumericalOnly(true).
+                MoveRightOf(mediumWealthyIcon, 5).
+                SetRelativeY(mediumWealthyIcon.relativePosition.y + 2).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
+                GetTextField(true);
+
+            var highWealthyTextField = fw.ui.UIHelper.AddTextField(touristPanel).
+                SetName("HighWealthySlider").
+                SetTooltip("Adjust high wealthy tourist factor. Value is clamped between 0 and 1.000.000.").
+                SetTextScale(wealthyTextScale).
+                SetNormalBgSprite(fw.CommonSprites.InfoViewPanel).
+                SetColor(Color.black).
+                SetTextColor(Color.white).
+                SetPadding(wealthyTextFieldPadding).
+                SetNumericalOnly(true).
+                MoveRightOf(highWealthyIcon, 5).
+                SetRelativeY(highWealthyIcon.relativePosition.y + 2).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
+                GetTextField(true);
+
+            lowWealthyTextField.eventTextSubmitted += OnTouristFactorChanged;
+            mediumWealthyTextField.eventTextSubmitted += OnTouristFactorChanged;
+            highWealthyTextField.eventTextSubmitted += OnTouristFactorChanged;
+
+            var labelPadding = new RectOffset(5, 5, 2, 0);
+            var lowWealthyLabel = fw.ui.UIHelper.AddLabel(touristPanel).
+                SetName("LowWealthyLabel").
+                SetTooltip("Percentage rate about the likeliness to spawn a tourist of this wealthness.").
+                SetBackgroundSprite(fw.CommonSprites.GenericPanel).
+                SetColor(Color.gray).
+                SetSuffix(" %").
+                SetPadding(labelPadding).
+                MoveRightOf(lowWealthyTextField, 5).
+                SetRelativeY(lowWealthyTextField.relativePosition.y + 2).
+                SetTextScale(wealthyTextScale).
+                SpanInnerRight(touristPanel, 5).
+                SetTextAlignment(UIHorizontalAlignment.Right).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
+                GetLabel();
+
+            var mediumWealthyLabel = fw.ui.UIHelper.AddLabel(touristPanel).
+                SetName("MediumWealthyLabel").
+                SetTooltip("Percentage rate about the likeliness to spawn a tourist of this wealthness.").
+                SetBackgroundSprite(fw.CommonSprites.GenericPanel).
+                SetColor(Color.gray).
+                SetSuffix(" %").
+                SetPadding(labelPadding).
+                MoveRightOf(mediumWealthyTextField, 5).
+                SetRelativeY(mediumWealthyTextField.relativePosition.y + 2).
+                SetTextScale(wealthyTextScale).
+                SpanInnerRight(touristPanel, 5).
+                SetTextAlignment(UIHorizontalAlignment.Right).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
+                GetLabel();
+
+            var highWealthyLabel = fw.ui.UIHelper.AddLabel(touristPanel).
+                SetName("HighWealthyLabel").
+                SetTooltip("Percentage rate about the likeliness to spawn a tourist of this wealthness.").
+                SetBackgroundSprite(fw.CommonSprites.GenericPanel).
+                SetColor(Color.gray).
+                SetSuffix(" %").
+                SetPadding(labelPadding).
+                MoveRightOf(highWealthyTextField, 5).
+                SetRelativeY(highWealthyTextField.relativePosition.y + 2).
+                SetTextScale(wealthyTextScale).
+                SpanInnerRight(touristPanel, 5).
+                SetTextAlignment(UIHorizontalAlignment.Right).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
+                GetLabel();
+
+            m_TouristFactorTextFields = new UITextField[] { lowWealthyTextField, mediumWealthyTextField, highWealthyTextField };
+            m_TouristFactorLabels = new UILabel[] { lowWealthyLabel, mediumWealthyLabel, highWealthyLabel };
         }
 
         private void InitNameGenerationPanel()
@@ -426,11 +576,29 @@ namespace AdvancedOutsideConnection
             var oldIsRefreshing = m_IsRefreshing;
             m_IsRefreshing = true;
 
-            Utils.Log("Refreshing textfield");
-
             var connectionAI = Utils.QueryBuildingAI(buildingID) as OutsideConnectionAI;
             var dummyTrafficFactor = m_CachedSettings.DummyTrafficFactor < 0 ? connectionAI.m_dummyTrafficFactor : m_CachedSettings.DummyTrafficFactor;
             m_DummyTrafficFactorTextfield.text = dummyTrafficFactor.ToString();
+
+            m_IsRefreshing = oldIsRefreshing;
+        }
+
+        private void RefreshTouristPanel()
+        {
+            var oldIsRefreshing = m_IsRefreshing;
+            m_IsRefreshing = true;
+
+            float accumulated = m_CachedSettings.TouristFactors.Aggregate((a, b) => b + a);
+
+            for (int i = 0; i < m_CachedSettings.TouristFactors.Length; ++i)
+            {
+                m_TouristFactorTextFields[i].text = m_CachedSettings.TouristFactors[i].ToString();
+                m_TouristFactorLabels[i].text = accumulated == 0 ? "0" : (m_CachedSettings.TouristFactors[i] * 100 / accumulated).ToString("0.0");
+            }
+
+            // Even if it looks strange on the overview panel, this is how the actual game code works. ;)
+            if (accumulated == 0)
+                m_TouristFactorLabels[2].text = (100f).ToString("0.0");
 
             m_IsRefreshing = oldIsRefreshing;
         }
@@ -455,7 +623,7 @@ namespace AdvancedOutsideConnection
             RefreshDirectionCheckbox(m_DirectionInCheckbox);
             RefreshDirectionCheckbox(m_DirectionOutCheckbox);
             RefreshDummyTrafficFactorTextfield();
-
+            RefreshTouristPanel();
 
             foreach (var comp in m_NameModeCheckBoxes)
             {
@@ -533,6 +701,36 @@ namespace AdvancedOutsideConnection
 
             if (m_LocationMarkerButton.activeStateIndex == 1)
                 ZoomToLocation();
+        }
+
+        private void OnTouristFactorChanged(UIComponent component, string text)
+        {
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            var buildingAI = Utils.QueryBuildingAI(m_BuildingID) as OutsideConnectionAI;
+
+            int index = -1;
+            for (int i = 0; i < m_TouristFactorTextFields.Length; ++i)
+            {
+                if (m_TouristFactorTextFields[i] == component)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(text))
+            {
+                m_CachedSettings.TouristFactors[index] = Utils.GetTouristFactorsFromOutsideConnection(buildingID)[index];
+            }
+            else
+            {
+                if (int.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out int value))
+                    m_CachedSettings.TouristFactors[index] = Mathf.Clamp(value, 0, 1000000);
+            }
+
+            RefreshTouristPanel();
         }
 
         private void OnDummyTrafficFactorChanged(UIComponent component, string newText)

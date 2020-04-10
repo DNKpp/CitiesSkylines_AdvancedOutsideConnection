@@ -1,4 +1,10 @@
-﻿using ColossalFramework;
+﻿
+//          Copyright Dominic Koepke 2020 - 2020.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          https://www.boost.org/LICENSE_1_0.txt)
+
+using ColossalFramework;
 using ColossalFramework.UI;
 using Harmony;
 using System;
@@ -51,6 +57,7 @@ namespace AdvancedOutsideConnection.framework.ui
         public CursorInfo verticalResizeHoverCursor => m_VerticalResizeHoverCursor;
 
         public static int DefaultVScrollbarWidth => 21;
+        public static int DefaultHSliderHeight => 13;
         public static Vector2 DefaultSpriteButtonSize => new Vector2(32f, 32f);
         public static Vector2 DefaultPanelIconSize => new Vector2(36f, 36f);
         public static int DefaultDragHandleSize => 40;
@@ -207,6 +214,22 @@ namespace AdvancedOutsideConnection.framework.ui
         {
             var helper = new UISlicedSpriteHelper(parent.AddUIComponent<UISlicedSprite>());
             return helper;
+        }
+
+        public static UISliderHelper AddSlider(UIComponent parent, UIOrientation orientation)
+        {
+            var size = Vector2.zero;
+            if (orientation == UIOrientation.Horizontal)
+                size = new Vector2(100, DefaultHSliderHeight);
+            else
+                size = new Vector2(DefaultHSliderHeight, 100);
+
+            var helper = new UISliderHelper(parent.AddUIComponent<UISlider>());
+            return helper.SetName("Slider").
+                SetRelativePosition(Vector3.zero).
+                SetSize(size).
+                SetOrientation(orientation).
+                AddDefaultTrackAndThumb();
         }
 
         public static UIScrollbarHelper AddScrollbarWithTrack(UIComponent parent, UIOrientation orientation)
@@ -583,6 +606,90 @@ namespace AdvancedOutsideConnection.framework.ui
                 SetAbsoluteY(other.absolutePosition.y + other.height + padding);
                 SetHeight(component.height + oldPos - component.absolutePosition.y);
             }
+            return this as T;
+        }
+
+        public T SpanInnerTopLeft(UIComponent other)
+        {
+            SpanInnerTop(other);
+            SpanInnerLeft(other);
+            return this as T;
+        }
+
+        public T SpanInnerTopLeft(UIComponent other, Vector2 padding)
+        {
+            SpanInnerTop(other, padding.y);
+            SpanInnerLeft(other, padding.x);
+            return this as T;
+        }
+
+        public T SpanInnerTopRight(UIComponent other)
+        {
+            SpanInnerTop(other);
+            SpanInnerRight(other);
+            return this as T;
+        }
+
+        public T SpanInnerTopRight(UIComponent other, Vector2 padding)
+        {
+            SpanInnerTop(other, padding.y);
+            SpanInnerRight(other, padding.x);
+            return this as T;
+        }
+
+        public T SpanInnerBottomLeft(UIComponent other)
+        {
+            SpanInnerBottom(other);
+            SpanInnerLeft(other);
+            return this as T;
+        }
+
+        public T SpanInnerBottomLeft(UIComponent other, Vector2 padding)
+        {
+            SpanInnerBottom(other, padding.y);
+            SpanInnerLeft(other, padding.x);
+            return this as T;
+        }
+
+        public T SpanInnerBottomRight(UIComponent other)
+        {
+            SpanInnerBottom(other);
+            SpanInnerRight(other);
+            return this as T;
+        }
+
+        public T SpanInnerBottomRight(UIComponent other, Vector2 padding)
+        {
+            SpanInnerBottom(other, padding.y);
+            SpanInnerRight(other, padding.x);
+            return this as T;
+        }
+
+        public T SpanInnerLeft(UIComponent other, float padding = 0)
+        {
+            var oldX = GetComponent().absolutePosition.x;
+            SetAbsoluteX(other.absolutePosition.x + padding);
+            SetWidth(GetComponent().width + (oldX - GetComponent().absolutePosition.x));
+            return this as T;
+        }
+
+        public T SpanInnerTop(UIComponent other, float padding = 0)
+        {
+            var oldY = GetComponent().absolutePosition.y;
+            SetAbsoluteX(other.absolutePosition.y + padding);
+            SetWidth(GetComponent().height + (oldY - GetComponent().absolutePosition.y));
+            return this as T;
+        }
+
+        public T SpanInnerRight(UIComponent other, float padding = 0)
+        {
+            SetWidth(Mathf.Max(0, other.absolutePosition.x + other.width - (GetComponent().absolutePosition.x + padding)));
+            return this as T;
+        }
+
+        public T SpanInnerBottom(UIComponent other, float padding = 0)
+        {
+            SetHeight(Mathf.Max(0, other.absolutePosition.y + other.height - (GetComponent().absolutePosition.y + padding)));
             return this as T;
         }
 
@@ -2282,6 +2389,131 @@ namespace AdvancedOutsideConnection.framework.ui
         public UICheckBoxHelper SetTextColor(Color32 color)
         {
             m_CheckBox.label.textColor = color;
+            return this;
+        }
+    }
+
+    public class UISliderHelper : UIComponentHelper<UISliderHelper>
+    {
+        private UISlider m_Slider = null;
+
+        public UISliderHelper(UISlider slider)
+        {
+            m_Slider = slider;
+            if (m_Slider == null)
+                throw new NullReferenceException();
+        }
+
+        protected override UIComponent GetComponent()
+        {
+            return m_Slider;
+        }
+
+        public UISlider GetSlider()
+        {
+            if (!base.IsValid())
+                throw new UIHelperException("UIComponentHelper has invalid state.");
+
+            //if (string.IsNullOrEmpty(m_CheckBox.text) && string.IsNullOrEmpty(m_CheckBox.normalBgSprite))
+            //    throw new UIHelperException("UIButton has neither text nor normalBgSprite.");
+            return m_Slider;
+        }
+
+        public UISliderHelper SetAtlas(UITextureAtlas atlas)
+        {
+            m_Slider.atlas = atlas;
+            return this;
+        }
+
+        public UISliderHelper SetBackgroundSprite(string spriteName)
+        {
+            m_Slider.backgroundSprite = spriteName;
+            return this;
+        }
+
+        public UISliderHelper SetFillIndicatorObject(UIComponent indicator)
+        {
+            m_Slider.fillIndicatorObject = indicator;
+            return this;
+        }
+
+        public UISliderHelper SetFillMode(UIFillMode mode)
+        {
+            m_Slider.fillMode = mode;
+            return this;
+        }
+
+        public UISliderHelper SetFillPadding(RectOffset padding)
+        {
+            m_Slider.fillPadding = padding;
+            return this;
+        }
+
+        public UISliderHelper SetMaxValue(float max)
+        {
+            m_Slider.maxValue = max;
+            return this;
+        }
+
+        public UISliderHelper SetMinValue(float min)
+        {
+            m_Slider.minValue = min;
+            return this;
+        }
+
+        public UISliderHelper SetOrientation(UIOrientation orientation)
+        {
+            m_Slider.orientation = orientation;
+            return this;
+        }
+
+        public UISliderHelper SetScrollWheelAmount(float amount)
+        {
+            m_Slider.scrollWheelAmount = amount;
+            return this;
+        }
+
+        public UISliderHelper SetStepSize(float amount)
+        {
+            m_Slider.stepSize = amount;
+            return this;
+        }
+
+        public UISliderHelper SetThumbObject(UIComponent thumb)
+        {
+            m_Slider.thumbObject = thumb;
+            return this;
+        }
+
+        public UISliderHelper SetThumbOffset(Vector2 offset)
+        {
+            m_Slider.thumbOffset = offset;
+            return this;
+        }
+
+        public UISliderHelper SetValue(float value)
+        {
+            m_Slider.value = value;
+            return this;
+        }
+
+        public UISliderHelper AddDefaultTrackAndThumb()
+        {
+            var track = m_Slider.AddUIComponent<UISlicedSprite>();
+            track.name = "Track";
+            track.spriteName = CommonSprites.BudgetSlider;
+            track.relativePosition = Vector3.zero;
+            track.width = m_Slider.width;
+            track.height = 9;
+            track.anchor = UIAnchorStyle.All;
+
+            var thumb = track.AddUIComponent<UISlicedSprite>();
+            thumb.name = "Thumb";
+            thumb.spriteName = CommonSprites.SliderBudget;
+            thumb.size = new Vector2(16, 16);
+            //scrollbarThumb.width = m_Scrollbar.width - 6;
+            m_Slider.thumbObject = thumb;
+
             return this;
         }
     }

@@ -16,6 +16,14 @@ namespace AdvancedOutsideConnection
     public delegate void DetailsOpenEventHandler(ushort buildingID);
     public static class Utils
     {
+        public static int[] GetTouristFactorsFromOutsideConnection(ushort buildingID)
+        {
+            var connectionAI = QueryBuildingAI(buildingID) as OutsideConnectionAI;
+            if (connectionAI)
+                return new int[] { connectionAI.m_touristFactor0, connectionAI.m_touristFactor1, connectionAI.m_touristFactor2 };
+            return null;
+        }
+
         public static bool IsRoutesViewOn()
         {
             return InfoManager.instance.CurrentMode == InfoManager.InfoMode.TrafficRoutes &&

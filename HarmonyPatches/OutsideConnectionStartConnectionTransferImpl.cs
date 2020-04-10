@@ -9,16 +9,13 @@ using Harmony;
 namespace AdvancedOutsideConnection.HarmonyPatches
 {
     [HarmonyPatch(typeof(OutsideConnectionAI))]
-    [HarmonyPatch("AddConnectionOffers")]
-    class OutsideConnectionAddConnectionOffers
+    [HarmonyPatch("StartConnectionTransferImpl")]
+    class OutsideConnectionStartConnectionTransferImpl
     {
-        private static bool Prefix(ushort buildingID, ref int touristFactor0, ref int touristFactor1, ref int touristFactor2, ref int dummyTrafficFactor)
+        private static bool Prefix(ushort buildingID, ref int touristFactor0, ref int touristFactor1, ref int touristFactor2)
         {
             if (OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(buildingID, out OutsideConnectionSettings settings))
             {
-                if (0 <= settings.DummyTrafficFactor)
-                    dummyTrafficFactor = settings.DummyTrafficFactor;
-
                 if (settings.TouristFactors != null && 3 <= settings.TouristFactors.Length)
                 {
                     touristFactor0 = settings.TouristFactors[0];

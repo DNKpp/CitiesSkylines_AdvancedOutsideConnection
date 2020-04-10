@@ -31,6 +31,17 @@ namespace AdvancedOutsideConnection.framework
         public static readonly string CheckBoxUnchecked = "check-unchecked";
         public static readonly string CheckBoxChecked = "check-checked";
 
+        public static readonly string SliderBudget = "SliderBudget";
+        public static readonly string SliderBudgetDay = "SliderBudgetDay";
+        public static readonly string SliderBudgetNight = "SliderBudgetNight";
+
+        public static readonly string BudgetSlider = "BudgetSlider";
+
+        public static readonly string IconTourist = "IconTourist";
+        public static readonly string IconTouristCar = "IconTouristCar";
+
+        public static readonly string InfoPanelIconCurrency = "InfoPanelIconCurrency";
+
         public static readonly SpriteSet IconOutsideConnections = new SpriteSet(
             "InfoIconOutsideConnections",
             "InfoIconOutsideConnectionsDisabled",
@@ -85,6 +96,14 @@ namespace AdvancedOutsideConnection.framework
             "InfoIconPublicTransportFocused",
             "InfoIconPublicTransportHovered",
             "InfoIconPublicTransportPressed"
+        );
+
+        public static readonly SpriteSet InfoIconLandValue = new SpriteSet(
+            "InfoIconLandValue",
+            "InfoIconLandValueDisabled",
+            "InfoIconLandValueFocused",
+            "InfoIconLandValueHovered",
+            "InfoIconLandValuePressed"
         );
 
         public static readonly SpriteSet IconClose = new SpriteSet(

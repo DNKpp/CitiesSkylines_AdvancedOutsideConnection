@@ -37,12 +37,14 @@ namespace AdvancedOutsideConnection
         // Let's just introduce a custom Name instead, so we don't have to patch the more central
         // GetBuildingName function and can simply rely on OutsideConnectionAI.GenerateName.
         public string Name = "";
+
+        public int[] TouristFactors;
     }
 
     class OutsideConnectionSettingsManager : Singleton<OutsideConnectionSettingsManager>
     {
         private static readonly string _dataID = "AOC_Data";
-        private static readonly ushort _dataVersion = 2;
+        private static readonly ushort _dataVersion = 3;
 
         private Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict = null;
 
@@ -58,8 +60,13 @@ namespace AdvancedOutsideConnection
 
         public void Init()
         {
-            if (!TryLoadData(out m_SettingsDict))
+            if (TryLoadData(out Dictionary<ushort, OutsideConnectionSettings> dict))
+                m_SettingsDict = dict;
+            else
+            {
+                m_SettingsDict = new Dictionary<ushort, OutsideConnectionSettings>();
                 Utils.Log("No saved data found.");
+            }
 
             SerializableDataExtension.instance.EventSaveData += OnSaveData;
         }
@@ -97,6 +104,7 @@ namespace AdvancedOutsideConnection
                     settings.CurrentDirectionFlags = building.m_flags & Building.Flags.IncomingOutgoing;
                     settings.OriginalDirectionFlags = settings.CurrentDirectionFlags;
                     settings.DummyTrafficFactor = connectionAI.m_dummyTrafficFactor;
+                    settings.TouristFactors = Utils.GetTouristFactorsFromOutsideConnection(buildingID);
 
                     m_SettingsDict.Add(buildingID, settings);
                 }
@@ -128,6 +136,10 @@ namespace AdvancedOutsideConnection
                     SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.CurrentDirectionFlags, elementBuffer);
                     SerializableDataExtension.WriteString(keyValue.Value.Name, elementBuffer);
                     SerializableDataExtension.WriteInt32(keyValue.Value.DummyTrafficFactor, elementBuffer);     // addition with version 2
+
+                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.TouristFactors.Length, elementBuffer);
+                    foreach (var value in keyValue.Value.TouristFactors)
+                        SerializableDataExtension.WriteInt32(value, elementBuffer);
 
                     SerializableDataExtension.WriteByteArray(elementBuffer, buffer);
                 }
@@ -199,10 +211,24 @@ namespace AdvancedOutsideConnection
                 flags &= (~Building.Flags.IncomingOutgoing) | settings.CurrentDirectionFlags;
                 BuildingManager.instance.m_buildings.m_buffer[buildingID].m_flags = flags;
 
-                if (version >= 2)
+                if (2 <= version)
                 {
                     settings.DummyTrafficFactor = SerializableDataExtension.ReadInt32(buffer, ref index);
                 }
+
+                if (3 <= version)
+                {
+                    // even if length is not equal 3, the data must be read from buffer
+                    var ratioLength = SerializableDataExtension.ReadUInt16(buffer, ref index);
+                    var ratios = new int[ratioLength];
+                    for (ushort k = 0; k < ratioLength; ++k)
+                    {
+                        ratios[k] = SerializableDataExtension.ReadInt32(buffer, ref index);
+                    }
+                }
+
+                if (settings.TouristFactors == null || settings.TouristFactors.Length != 3)
+                    settings.TouristFactors = Utils.GetTouristFactorsFromOutsideConnection(buildingID);
 
                 if (settingsDict.ContainsKey(buildingID))
                     Utils.LogWarning("Overrides existing outside connection with buildingID: " + buildingID);
