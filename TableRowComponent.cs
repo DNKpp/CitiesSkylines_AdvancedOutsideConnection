@@ -9,6 +9,8 @@ using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
+    using fw = framework;
+
     class TableRowComponent : UICustomControl
     {
         private bool m_IsMouseOver = false;
@@ -22,12 +24,13 @@ namespace AdvancedOutsideConnection
             if (!component)
                 throw new System.Exception("TableRowComponent: You must setup component first before calling base.Awake()");
 
-            m_Background = component.AddUIComponent<UIPanel>();
-            m_Background.name = "BackgroundPanel";
-            m_Background.backgroundSprite = CommonSprites.InfoViewPanel;
-            m_Background.position = Vector3.zero;
-            m_Background.size = component.size;
-            m_Background.anchor = UIAnchorStyle.All;
+            m_Background = fw.ui.UIHelper.AddPanel(component).
+                SetName("Background Panel").
+                SetBackgroundSprite(fw.CommonSprites.InfoViewPanel).
+                SetRelativePosition(Vector3.zero).
+                SetSize(component.size).
+                SetAnchor(UIAnchorStyle.All).
+                GetPanel();
             SetBackgroundColor();
 
             component.eventMouseEnter += OnMouseEnter;

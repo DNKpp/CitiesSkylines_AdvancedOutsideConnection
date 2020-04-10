@@ -10,6 +10,8 @@ using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
+    using fw = framework;
+
     class OutsideConnectionDetailPanel : UICustomControl
     {
         class NameRowComponent : TableRowComponent
@@ -23,23 +25,27 @@ namespace AdvancedOutsideConnection
                 m_MainPanel = gameObject.AddComponent<UIPanel>();
                 m_MainPanel.name = "MainPanel";
                 m_MainPanel.size = new Vector2(200, 45);
-                m_MainPanel.clipChildren = false;
 
                 base.Awake();
 
-                m_DeleteButton = WidgetsFactory.AddButton(m_MainPanel, CommonSprites.IconClose, "Delete");
-                m_DeleteButton.relativePosition = new Vector3(m_MainPanel.width - m_DeleteButton.width, 0);
-                m_DeleteButton.tooltip = "Delete name from random list.";
-                m_DeleteButton.anchor = UIAnchorStyle.Right | UIAnchorStyle.CenterVertical;
+                m_DeleteButton = fw.ui.UIHelper.AddButton(m_MainPanel).
+                    SetName("Delete").
+                    SetBackgroundSprites(fw.PreparedSpriteSets.IconClose).
+                    MoveInnerRightOf(m_MainPanel).
+                    SetTooltip("Delete entry from list.").
+                    SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.CenterVertical).
+                    GetButton();
                 m_DeleteButton.eventClick += delegate (UIComponent comp, UIMouseEventParameter mouseParam)
                 {
                     eventDeleteClicked?.Invoke(m_MainPanel, mouseParam);
                 };
 
-                m_NameTextField = WidgetsFactory.AddTextField(m_MainPanel);
-                m_NameTextField.relativePosition = new Vector3(2, 0);
-                m_NameTextField.size = new Vector2(m_DeleteButton.relativePosition.x - m_NameTextField.relativePosition.x - 2, 30);
-                m_NameTextField.anchor = UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.CenterVertical;
+                m_NameTextField = fw.ui.UIHelper.AddTextField(m_MainPanel).
+                    SetHeight(35).
+                    SetRelativePosition(new Vector3(5, 0)).
+                    ExpandHorizontallyUntil(m_DeleteButton, 5).
+                    SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.CenterVertical).
+                    GetTextField(true);
                 m_NameTextField.eventTextSubmitted += delegate (UIComponent comp, string newText)
                 {
                     eventNameSubmitted?.Invoke(m_MainPanel, newText);
@@ -66,12 +72,10 @@ namespace AdvancedOutsideConnection
         private UIPanel m_MainPanel = null;
         private UISprite m_PanelIcon = null;
         private UITextField m_ConnectionNameTextfield = null;
-        private UIButton m_PanelClose = null;
         private UIMultiStateButton m_LocationMarkerButton = null;
         private UIMultiStateButton m_ShowHideRoutesButton = null;
         private UIPanel m_NameGenerationPanel = null;
         private UIResizeHandle m_BottomResizeHandle = null;
-        private UIPanel m_NameModeSubPanel = null;
         private UIScrollablePanel m_RandomNameContainer = null;
         private UIScrollbar m_RandomNameContainerScrollbar = null;
         private UILabel m_RandomNameCountLabel = null;
@@ -82,6 +86,7 @@ namespace AdvancedOutsideConnection
         private UICheckBox m_DirectionOutCheckbox = null;
         private UILabel m_TransportTypeLabel = null;
         private UITextField m_DummyTrafficFactorTextfield = null;
+        private UICheckBox[] m_NameModeCheckBoxes = null;
 
         private bool m_Initialized = false;
         private bool m_IsRefreshing = false;
@@ -111,15 +116,17 @@ namespace AdvancedOutsideConnection
             var objectOfType = UnityEngine.Object.FindObjectOfType<UIView>();
             transform.parent = objectOfType.transform;
 
-            m_MainPanel = WidgetsFactory.MakeMainPanel(gameObject, m_MainPanelName, new Vector2(500, 500));
-            m_MainPanel.name = m_MainPanelName;
-            m_MainPanel.relativePosition = new Vector3(900, 0f);
-            m_MainPanel.minimumSize = new Vector2(m_MainPanel.width, 150);
+            m_MainPanel = fw.ui.UIHelper.MakeMainPanel(gameObject).
+                SetName(m_MainPanelName).
+                SetSize(new Vector2(500, 500)).
+                SetMinimumSize(new Vector2(500, 150)).
+                SetClipChildren(false).
+                GetPanel();
 
             InitCaptionArea();
             InitSettingsPanel();
 
-            m_BottomResizeHandle = WidgetsFactory.AddPanelBottomResizeHandle(m_MainPanel);
+            m_BottomResizeHandle = fw.ui.UIHelper.AddResizeHandle(m_MainPanel, UIResizeHandle.ResizeEdge.Bottom).GetResizeHandle();
             InitNameGenerationPanel();
 
             m_MainPanel.minimumSize = new Vector2(m_MainPanel.width, m_NameGenerationPanel.relativePosition.y + m_NameGenerationPanel.minimumSize.y + m_BottomResizeHandle.height);
@@ -128,96 +135,52 @@ namespace AdvancedOutsideConnection
             m_Initialized = true;
         }
 
-        private void InitSettingsPanel()
-        {
-            m_SettingsPanel = m_MainPanel.AddUIComponent<UIPanel>();
-            m_SettingsPanel.name = "SettingsPanel";
-            m_SettingsPanel.backgroundSprite = CommonSprites.GenericPanel;
-            m_SettingsPanel.width = m_MainPanel.width - 10;
-            m_SettingsPanel.height = 100;
-            m_SettingsPanel.color = new Color32(206, 206, 206, 255);
-            m_SettingsPanel.relativePosition = new Vector3(5, m_PanelIcon.relativePosition.y + m_PanelIcon.height + 5);
-            m_SettingsPanel.anchor = UIAnchorStyle.Left | UIAnchorStyle.Top | UIAnchorStyle.Right;
-
-            m_TransportTypeLabel = WidgetsFactory.AddLabel(m_SettingsPanel, "", false, "TransportTypeLabel");
-            m_TransportTypeLabel.autoSize = true;
-            m_TransportTypeLabel.textScale = 0.7f;
-            m_TransportTypeLabel.relativePosition = new Vector3(10, 10);
-            m_TransportTypeLabel.anchor = UIAnchorStyle.Left | UIAnchorStyle.Top;
-
-            m_DirectionLabel = WidgetsFactory.AddLabel(m_SettingsPanel, "", false, "DirectionLabel");
-            m_DirectionLabel.text = "Direction";
-            m_DirectionLabel.autoSize = false;
-            m_DirectionLabel.width = 100;
-            m_DirectionLabel.autoHeight = true;
-            m_DirectionLabel.textAlignment = UIHorizontalAlignment.Center;
-            m_DirectionLabel.textScale = 0.7f;
-            m_DirectionLabel.relativePosition = new Vector3(m_SettingsPanel.width - m_DirectionLabel.width - 10, 10);
-            m_DirectionLabel.anchor = UIAnchorStyle.Right | UIAnchorStyle.Top;
-            //m_DirectionLabel.backgroundSprite = CommonSpriteNames.EmptySprite;
-
-            m_DirectionInCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "In", Building.Flags.Outgoing, OnDirectionCheckboxChanged, "DirectionInCheckBox");
-            m_DirectionInCheckbox.relativePosition = m_DirectionLabel.relativePosition + new Vector3(0, 20);
-            m_DirectionInCheckbox.label.textScale = 0.7f;
-            m_DirectionInCheckbox.anchor = UIAnchorStyle.Right | UIAnchorStyle.Top;
-            m_DirectionOutCheckbox = WidgetsFactory.AddCheckBox(m_SettingsPanel, "Out", Building.Flags.Incoming, OnDirectionCheckboxChanged, "DirectionOutCheckBox");
-            m_DirectionOutCheckbox.relativePosition = m_DirectionInCheckbox.relativePosition + new Vector3(50, 0);
-            m_DirectionOutCheckbox.label.textScale = 0.7f;
-            m_DirectionOutCheckbox.anchor = UIAnchorStyle.Right | UIAnchorStyle.Top;
-
-            var dummyTrafficFactorLabel = WidgetsFactory.AddLabel(m_SettingsPanel, "Dummy Traffic Factor: ", false, "DummyTrafficFactorLabel");
-            dummyTrafficFactorLabel.autoSize = true;
-            dummyTrafficFactorLabel.textScale = 0.7f;
-            dummyTrafficFactorLabel.relativePosition = m_TransportTypeLabel.relativePosition + new Vector3(0, 25);
-            m_TransportTypeLabel.anchor = UIAnchorStyle.Left | UIAnchorStyle.Top;
-
-            m_DummyTrafficFactorTextfield = WidgetsFactory.AddNumericTextField(m_SettingsPanel, 0, false, false, "DummyTrafficFactorTextfield");
-            m_DummyTrafficFactorTextfield.relativePosition = dummyTrafficFactorLabel.relativePosition + new Vector3(dummyTrafficFactorLabel.width + 5, -5);
-            m_DummyTrafficFactorTextfield.normalBgSprite = CommonSprites.InfoViewPanel;
-            m_DummyTrafficFactorTextfield.textScale = 0.7f;
-            m_DummyTrafficFactorTextfield.color = Color.black;
-            m_DummyTrafficFactorTextfield.textColor = Color.white;
-            m_DummyTrafficFactorTextfield.size = new Vector2(75, 20);
-            m_DummyTrafficFactorTextfield.padding = new RectOffset(0, 0, 5, 5);
-            m_DummyTrafficFactorTextfield.tooltip = "Modifies the factor of the dummy traffic. Value is clamped between 0 and 1.000.000.";
-            m_DummyTrafficFactorTextfield.anchor = UIAnchorStyle.Left | UIAnchorStyle.Top;
-            m_DummyTrafficFactorTextfield.eventTextSubmitted += OnDummyTrafficFactorChanged;
-        }
-
         private void InitCaptionArea()
         {
-            m_PanelIcon = WidgetsFactory.AddPanelIcon(m_MainPanel, CommonSprites.IconOutsideConnections.normal);
-            WidgetsFactory.AddPanelDragHandle(m_MainPanel);
-            m_PanelClose = WidgetsFactory.AddPanelCloseButton(m_MainPanel);
+            m_PanelIcon = fw.ui.UIHelper.AddSprite(m_MainPanel).
+               SetSize(fw.ui.UIHelper.DefaultPanelIconSize).
+               SetSpriteName(fw.CommonSprites.IconOutsideConnections.normal).
+               MoveInnerTopLeftOf(m_MainPanel, new Vector3(8, 2)).
+               SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
+               GetSprite(true);
+
+            var dragHandle = fw.ui.UIHelper.AddDragHandle(m_MainPanel).
+                SetTarget(m_MainPanel).
+                SetWidth(m_MainPanel.width).
+                SetHeight(fw.ui.UIHelper.DefaultDragHandleSize).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Right | UIAnchorStyle.Left).
+                GetDragHandle();
+
+            var m_PanelClose = fw.ui.UIHelper.AddButton(m_MainPanel).
+                SetName("Close").
+                SetBackgroundSprites(fw.PreparedSpriteSets.IconClose).
+                MoveInnerTopRightOf(m_MainPanel, new Vector3(5, 2)).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Right).
+                GetButton();
             m_PanelClose.eventClick += delegate { OnClose(); };
 
-            var backgroundSprites = new CommonSprites.SpriteSet[2];
-            backgroundSprites[0] = new CommonSprites.SpriteSet(CommonSprites.InfoIconBase);
-            backgroundSprites[0].focused = "";
-            backgroundSprites[1] = new CommonSprites.SpriteSet(CommonSprites.InfoIconBase);
-            backgroundSprites[1].focused = "";
-            backgroundSprites[1].normal = CommonSprites.InfoIconBase.focused;
-            var foregroundSprites = new CommonSprites.SpriteSet[2];
-            foregroundSprites[0] = new CommonSprites.SpriteSet(CommonSprites.InfoIconTrafficRoutes);
-            foregroundSprites[0].focused = "";
-            foregroundSprites[1] = new CommonSprites.SpriteSet(CommonSprites.InfoIconTrafficRoutes);
-            foregroundSprites[1].focused = "";
-            foregroundSprites[1].normal = CommonSprites.InfoIconTrafficRoutes.focused;
-            m_ShowHideRoutesButton = WidgetsFactory.AddMultistateButton(m_MainPanel, foregroundSprites, backgroundSprites, "ShowHideRoutesButton");
-            m_ShowHideRoutesButton.relativePosition = new Vector3(m_PanelClose.relativePosition.x - m_ShowHideRoutesButton.width - 2, 4);
+            m_ShowHideRoutesButton = fw.ui.UIHelper.AddMultiStateButton(m_MainPanel).
+                SetName("ShowHideTrafficRoutesButton").
+                SetSpriteSets(new fw.SpriteSet[] { fw.PreparedSpriteSets.ShowHideTrafficRoutesBg0, fw.PreparedSpriteSets.ShowHideTrafficRoutesBg1 },
+                    new fw.SpriteSet[] { fw.PreparedSpriteSets.ShowHideTrafficRoutesFg0, fw.PreparedSpriteSets.ShowHideTrafficRoutesFg1 }).
+                MoveLeftOf(m_PanelClose, 2).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Right).
+                GetMultiStateButton();
 
-            backgroundSprites = new CommonSprites.SpriteSet[2];
-            backgroundSprites[0] = new CommonSprites.SpriteSet(CommonSprites.LocationMarker);
-            backgroundSprites[0].focused = "";
-            backgroundSprites[1] = new CommonSprites.SpriteSet(CommonSprites.LocationMarkerActive);
-            backgroundSprites[1].focused = "";
-            m_LocationMarkerButton = WidgetsFactory.AddMultistateButton(m_MainPanel, null, backgroundSprites, "LocationMarkerButton");
-            m_LocationMarkerButton.relativePosition = new Vector3(m_ShowHideRoutesButton.relativePosition.x - m_LocationMarkerButton.width - 2, 4);
+            m_LocationMarkerButton = fw.ui.UIHelper.AddMultiStateButton(m_MainPanel).
+                SetName("LocationMarkerButton").
+                SetSpriteSets(new fw.SpriteSet[] { fw.PreparedSpriteSets.LocationMarker, fw.PreparedSpriteSets.LocationMarkerActive }).
+                MoveLeftOf(m_ShowHideRoutesButton, 2).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Right).
+                GetMultiStateButton();
 
-            m_ConnectionNameTextfield = WidgetsFactory.AddTextField(m_MainPanel, "Testtext", true);
-            m_ConnectionNameTextfield.size = new Vector2(290, 32);
-            m_ConnectionNameTextfield.relativePosition = new Vector3((m_MainPanel.width - m_ConnectionNameTextfield.width) / 2, 5);
-            m_ConnectionNameTextfield.anchor = UIAnchorStyle.Top | UIAnchorStyle.Right | UIAnchorStyle.Left;
+            m_ConnectionNameTextfield = fw.ui.UIHelper.AddTextField(m_MainPanel).
+                SetName("ConnectionNameTextField").
+                SetHeight(32).
+                ClampHorizontallyBetween(m_PanelIcon, m_LocationMarkerButton, 15, 15).
+                SetRelativeY(5).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Right | UIAnchorStyle.Left).
+                GetTextField(true);
 
             m_ShowHideRoutesButton.eventClick += OnShowHideRoutesClicked;
             m_LocationMarkerButton.eventClick += OnLocationMarkerClicked;
@@ -232,68 +195,182 @@ namespace AdvancedOutsideConnection
             };
         }
 
+        private void InitSettingsPanel()
+        {
+            var textScale = 0.7f;
+
+            m_SettingsPanel = fw.ui.UIHelper.AddPanel(m_MainPanel).
+                SetName("SettingsPanel").
+                SetBackgroundSprite(fw.CommonSprites.GenericPanel).
+                SetColor(fw.ui.UIHelper.contenPanelColor).
+                SetSize(new Vector2(m_MainPanel.width - 10, 100)).
+                SetRelativeX(5).
+                MoveBottomOf(m_PanelIcon, 2).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top | UIAnchorStyle.Right).
+                GetPanel();
+
+            m_TransportTypeLabel = fw.ui.UIHelper.AddLabel(m_SettingsPanel, false).
+                SetName("TransportTypeLabel").
+                SetAutoSize(true).
+                SetTextScale(textScale).
+                SetRelativePosition(new Vector3(10, 10)).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
+                GetLabel(true);
+
+            m_DirectionLabel = fw.ui.UIHelper.AddLabel(m_SettingsPanel, false).
+                SetName("DirectionLabel").
+                SetText("Direction").
+                SetAutoSize(true).
+                SetTextScale(textScale).
+                SetTextAlignment(UIHorizontalAlignment.Center).
+                MoveInnerTopRightOf(m_SettingsPanel, new Vector3(25, 10)).
+                SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.Top).
+                GetLabel();
+
+            m_DirectionOutCheckbox = fw.ui.UIHelper.AddCheckBox(m_SettingsPanel).
+                SetName("DirectionOutCheckBox").
+                SetText("Out").
+                SetTextScale(textScale).
+                SetWidth(50).
+                MoveInnerRightOf(m_SettingsPanel, 5).
+                MoveBottomOf(m_DirectionLabel, 5).
+                SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.Top).
+                SetObjectUserData(Building.Flags.Incoming).
+                GetCheckBox();
+            m_DirectionOutCheckbox.eventCheckChanged += OnDirectionCheckboxChanged;
+
+            m_DirectionInCheckbox = fw.ui.UIHelper.AddCheckBox(m_SettingsPanel).
+                SetName("DirectionInCheckBox").
+                SetText("In").
+                SetTextScale(textScale).
+                SetWidth(40).
+                SetRelativeY(m_DirectionOutCheckbox.relativePosition.y).
+                MoveLeftOf(m_DirectionOutCheckbox, 5).
+                SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.Top).
+                SetObjectUserData(Building.Flags.Outgoing).
+                GetCheckBox();
+            m_DirectionInCheckbox.eventCheckChanged += OnDirectionCheckboxChanged;
+
+            var dummyTrafficFactorLabel = fw.ui.UIHelper.AddLabel(m_SettingsPanel).
+                SetName("DummyTrafficFactorLabel").
+                SetPrefix("Dummy Traffic Factor: ").
+                SetAutoSize(true).
+                SetTextScale(textScale).
+                MoveBottomOf(m_TransportTypeLabel, 20).
+                SetRelativeX(m_TransportTypeLabel.relativePosition.x).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
+                GetLabel();
+
+            m_DummyTrafficFactorTextfield = fw.ui.UIHelper.AddTextField(m_SettingsPanel).
+                SetName("DummyTrafficFactorTextfield").
+                SetNumericalOnly(true).
+                SetTextScale(textScale).
+                SetNormalBgSprite(fw.CommonSprites.InfoViewPanel).
+                SetColor(Color.black).
+                SetTextColor(Color.white).
+                SetPadding(new RectOffset(0, 0, 5, 5)).
+                SetTooltip("Modifies the factor of the dummy traffic. Value is clamped between 0 and 1.000.000.").
+                SetSize(new Vector2(75, 20)).
+                MoveRightOf(dummyTrafficFactorLabel, 5).
+                SetRelativeY(dummyTrafficFactorLabel.relativePosition.y - 5).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
+                GetTextField(true);
+            m_DummyTrafficFactorTextfield.eventTextSubmitted += OnDummyTrafficFactorChanged;
+        }
+
         private void InitNameGenerationPanel()
         {
-            m_NameGenerationPanel = m_MainPanel.AddUIComponent<UIPanel>();
-            m_NameGenerationPanel.name = "NameGenerationGroupPanel";
-            m_NameGenerationPanel.backgroundSprite = CommonSprites.GenericPanel;
-            m_NameGenerationPanel.width = m_MainPanel.width - 10;
-            m_NameGenerationPanel.height = 300;
-            m_NameGenerationPanel.color = new Color32(206, 206, 206, 255);
-            m_NameGenerationPanel.relativePosition = new Vector3(5, m_BottomResizeHandle.relativePosition.y - m_NameGenerationPanel.height);
-            m_NameGenerationPanel.anchor = UIAnchorStyle.All;
+            m_NameGenerationPanel = fw.ui.UIHelper.AddPanel(m_MainPanel).
+                SetName("NameGenerationGroupPanel").
+                SetBackgroundSprite(fw.CommonSprites.GenericPanel).
+                SetSize(new Vector2(m_MainPanel.width - 10, 300)).
+                SetColor(fw.ui.UIHelper.contenPanelColor).
+                MoveTopOf(m_BottomResizeHandle).
+                SetRelativeX(5).
+                SetAnchor(UIAnchorStyle.All).
+                GetPanel();
 
-            var label = WidgetsFactory.AddLabel(m_NameGenerationPanel, "Name Generation", true);
-            label.width = m_NameGenerationPanel.width;
-            label.relativePosition = new Vector3(100, 15);
-            label.textAlignment = UIHorizontalAlignment.Center;
-            label.anchor = UIAnchorStyle.CenterHorizontal | UIAnchorStyle.Top;
+            var label = fw.ui.UIHelper.AddLabel(m_NameGenerationPanel, true).
+                SetName("NameGenerationHeadlineLabel").
+                SetText("Name Generation").
+                SetTextAlignment(UIHorizontalAlignment.Center).
+                SetWidth(m_NameGenerationPanel.width).
+                SetRelativePosition(new Vector3(100, 15)).
+                SetAnchor(UIAnchorStyle.CenterHorizontal | UIAnchorStyle.Top).
+                GetLabel();
 
-            var checkboxDefs = new KeyValuePair<string, int>[Utils.MaxEnumValue<OutsideConnectionSettings.NameModeType>() + 1];
-            for (var i = Utils.MinEnumValue<OutsideConnectionSettings.NameModeType>(); i <= Utils.MaxEnumValue<OutsideConnectionSettings.NameModeType>(); ++i)
-            {
-                var enumVal = (OutsideConnectionSettings.NameModeType)i;
-                checkboxDefs[i] = new KeyValuePair<string, int>( enumVal.ToString(), i );
-            };
-            m_NameModeSubPanel = WidgetsFactory.AddGroupedCheckBoxes(m_NameGenerationPanel, checkboxDefs, 20, true,
-                new PropertyChangedEventHandler<bool>(OnNameGenerationModeChanged), "NameGenerationModeCheckBox");
-            m_NameModeSubPanel.size = new Vector2(160, 110);
-            //m_NameModeSubPanel.backgroundSprite = CommonSpriteNames.EmptySprite;
-            m_NameModeSubPanel.relativePosition = new Vector3(m_NameGenerationPanel.width - m_NameModeSubPanel.width - 5, label.relativePosition.y + label.height + 40);
-            foreach (var comp in m_NameModeSubPanel.components)
-            {
-                var checkbox = comp as UICheckBox;
-                if (checkbox && checkbox.label)
-                {
-                    checkbox.label.color = Color.white;
-                }
-            }
+            m_RandomNameContainer = fw.ui.UIHelper.AddScrollablePanel(m_NameGenerationPanel, UIOrientation.Vertical).
+                SetName("RandomNameContainer").
+                SetBackgroundSprite(fw.CommonSprites.EmptySprite).
+                SetColor(Color.grey).
+                MoveInnerBottomLeftOf(m_NameGenerationPanel, new Vector3(5, 5)).
+                ExpandVerticallyUntil(label, 15).
+                SetWidth(300).
+                SetAnchor(UIAnchorStyle.All).
+                GetScrollabelPanel(true);
 
-            m_RandomNameContainer = WidgetsFactory.AddScrollablePanel(m_NameGenerationPanel);
-            m_RandomNameContainer.relativePosition = new Vector3(5, label.relativePosition.y + label.height + 15);
-            m_RandomNameContainer.width = m_NameModeSubPanel.relativePosition.x - m_RandomNameContainer.relativePosition.x - WidgetsFactory.DefaultVScrollbarWidth - 5;
-            m_RandomNameContainer.height = m_NameGenerationPanel.height - m_RandomNameContainer.relativePosition.y - 5;
-            m_RandomNameContainer.backgroundSprite = CommonSprites.EmptySprite;
-            m_RandomNameContainer.color = Color.grey;
-            m_RandomNameContainerScrollbar = WidgetsFactory.AddVerticalScrollbar(m_NameGenerationPanel, m_RandomNameContainer);
+            m_RandomNameContainerScrollbar = fw.ui.UIHelper.AddScrollbarWithTrack(m_NameGenerationPanel, UIOrientation.Vertical).
+                SetHeight(m_RandomNameContainer.height).
+                MoveRightOf(m_RandomNameContainer).
+                SetRelativeY(m_RandomNameContainer.relativePosition.y).
+                SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.Top | UIAnchorStyle.Bottom).
+                GetScrollbar();
+            m_RandomNameContainer.verticalScrollbar = m_RandomNameContainerScrollbar;
 
-            m_SingleNameTextFrame = WidgetsFactory.AddTextField(m_NameGenerationPanel);
-            m_SingleNameTextFrame.size = new Vector2(m_RandomNameContainer.width, 45);
-            m_SingleNameTextFrame.relativePosition = m_RandomNameContainer.relativePosition;
-            m_SingleNameTextFrame.normalBgSprite = CommonSprites.InfoViewPanel;//CommonSpriteNames.EmptySprite;
-            m_SingleNameTextFrame.color = Color.black;
-            m_SingleNameTextFrame.anchor = UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.Top;
+            m_NameModeCheckBoxes = new UICheckBox[Utils.MaxEnumValue<OutsideConnectionSettings.NameModeType>() + 1];
+            m_NameModeCheckBoxes[0] = fw.ui.UIHelper.AddCheckBox(m_NameGenerationPanel).
+                SetName("VanillaCheckBox").
+                SetText("Vanilla").
+                SetTextColor(Color.white).
+                SetObjectUserData(OutsideConnectionSettings.NameModeType.Vanilla).
+                SetGroup(m_RandomNameContainer).
+                SetRelativeY(m_RandomNameContainer.relativePosition.y).
+                MoveRightOf(m_RandomNameContainerScrollbar, 5).
+                GetCheckBox();
+            m_NameModeCheckBoxes[0].eventCheckChanged += OnNameGenerationModeChanged;
+
+            m_NameModeCheckBoxes[1] = fw.ui.UIHelper.AddCheckBox(m_NameGenerationPanel).
+                SetName("CustomSingleCheckBox").
+                SetText("Custom Single").
+                SetTextColor(Color.white).
+                SetObjectUserData(OutsideConnectionSettings.NameModeType.CustomSingle).
+                SetGroup(m_RandomNameContainer).
+                MoveBottomOf(m_NameModeCheckBoxes[0], 10).
+                SetRelativeX(m_NameModeCheckBoxes[0].relativePosition.x).
+                GetCheckBox();
+            m_NameModeCheckBoxes[1].eventCheckChanged += OnNameGenerationModeChanged;
+
+            m_NameModeCheckBoxes[2] = fw.ui.UIHelper.AddCheckBox(m_NameGenerationPanel).
+                SetName("CustomRandomCheckBox").
+                SetText("Custom Random").
+                SetTextColor(Color.white).
+                SetObjectUserData(OutsideConnectionSettings.NameModeType.CustomRandom).
+                SetGroup(m_RandomNameContainer).
+                MoveBottomOf(m_NameModeCheckBoxes[1], 10).
+                SetRelativeX(m_NameModeCheckBoxes[1].relativePosition.x).
+                GetCheckBox();
+            m_NameModeCheckBoxes[2].eventCheckChanged += OnNameGenerationModeChanged;
+
+            m_SingleNameTextFrame = fw.ui.UIHelper.AddTextField(m_NameGenerationPanel).
+                SetName("SingleNameTextField").
+                SetSize(new Vector2(m_RandomNameContainer.width, 45)).
+                SetRelativePosition(m_RandomNameContainer.relativePosition).
+                SetNormalBgSprite(fw.CommonSprites.InfoViewPanel).
+                SetColor(Color.black).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.Top).
+                GetTextField(true);
             m_SingleNameTextFrame.eventTextSubmitted += OnSingleNameSubmitted;
 
-            m_RandomNameCountLabel = WidgetsFactory.AddLabel(m_MainPanel, "", true, "NameGenerationRandomCountLabel");
-            m_RandomNameCountLabel.relativePosition = m_BottomResizeHandle.relativePosition + new Vector3(10, 10);
-            m_RandomNameCountLabel.anchor = UIAnchorStyle.Bottom | UIAnchorStyle.Left;
-            m_RandomNameCountLabel.prefix = "Random Names-Count: ";
-            int oldZ = m_RandomNameCountLabel.zOrder;
-            m_RandomNameCountLabel.zOrder = m_BottomResizeHandle.zOrder;
-            m_BottomResizeHandle.zOrder = oldZ;
+            m_RandomNameCountLabel = fw.ui.UIHelper.AddLabel(m_MainPanel, true).
+                SetName("NameGenerationRandomCountLabel").
+                SetPrefix("Random Names-Count: ").
+                SetAutoSize(true).
+                MoveInnerBottomLeftOf(m_MainPanel, new Vector3(10, 7)).
+                SwapZOrder(m_BottomResizeHandle).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Bottom).
+                GetLabel();
 
-            m_NameGenerationPanel.minimumSize = new Vector2(m_NameGenerationPanel.width, m_NameModeSubPanel.relativePosition.y + m_NameModeSubPanel.height);
+            m_NameGenerationPanel.minimumSize = new Vector2(m_NameGenerationPanel.width, m_RandomNameContainer.relativePosition.y + 100);
         }
 
         private void LateUpdate()
@@ -380,11 +457,10 @@ namespace AdvancedOutsideConnection
             RefreshDummyTrafficFactorTextfield();
 
 
-            foreach (var comp in m_NameModeSubPanel.components)
+            foreach (var comp in m_NameModeCheckBoxes)
             {
-                var checkbox = comp as UICheckBox;
-                if (checkbox)
-                    checkbox.isChecked = (int)checkbox.objectUserData == (int)m_CachedSettings.NameMode;
+                if (comp)
+                    comp.isChecked = (OutsideConnectionSettings.NameModeType)comp.objectUserData == m_CachedSettings.NameMode;
             }
 
             m_SingleNameTextFrame.text = m_CachedSettings.SingleGenerationName;

@@ -10,10 +10,11 @@ using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
+    using fw = framework;
+
     class OverviewPanelExtension : OverviewPanelBase
     {
         private UIPanel m_MainPanel = null;
-        private UIPanel m_Caption = null;
         private UIScrollablePanel m_ScrollablePanel = null;
         private UIPanel m_OutsideConnectionTitle = null;
         private UIScrollbar m_Scrollbar = null;
@@ -41,7 +42,7 @@ namespace AdvancedOutsideConnection
 
         private void Update()
         {
-            if (m_Initialized && m_LastOutsideConnectionCount != BuildingManager.instance.GetOutsideConnections().m_size)
+            if (m_Initialized && component.isVisible && m_LastOutsideConnectionCount != BuildingManager.instance.GetOutsideConnections().m_size)
             {
                 RefreshOutsideConnections();
                 m_LastOutsideConnectionCount = BuildingManager.instance.GetOutsideConnections().m_size;
@@ -80,32 +81,79 @@ namespace AdvancedOutsideConnection
             var objectOfType = UnityEngine.Object.FindObjectOfType<UIView>();
             transform.parent = objectOfType.transform;
 
-            m_MainPanel = WidgetsFactory.MakeMainPanel(gameObject, m_MainPanelName, new Vector2(500, 700));
-            m_MainPanel.minimumSize = new Vector2(m_MainPanel.width, 150);
+            m_MainPanel = fw.ui.UIHelper.MakeMainPanel(gameObject).
+                SetAbsolutePosition(new Vector3(400, 20)).
+                SetSize(new Vector2(500, 700)).
+                SetName(m_MainPanelName).
+                SetMinimumSize(new Vector2(500, 150)).
+                GetPanel();
 
-            m_OutsideConnectionCountLabel = WidgetsFactory.AddLabel(m_MainPanel, "", true, "NameGenerationRandomCountLabel");
-            m_OutsideConnectionCountLabel.name = "OutsideConnectionCount";
-            m_OutsideConnectionCountLabel.prefix = "Outside Connections-Count: ";
-            m_OutsideConnectionCountLabel.anchor = UIAnchorStyle.Left | UIAnchorStyle.Bottom;
+            var panelIcon = fw.ui.UIHelper.AddSprite(m_MainPanel).
+                SetSize(fw.ui.UIHelper.DefaultPanelIconSize).
+                SetSpriteName(fw.CommonSprites.IconOutsideConnections.normal).
+                MoveInnerTopLeftOf(m_MainPanel, new Vector3(8, 2)).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
+                GetSprite();
 
-            m_BottomResizeHandle = WidgetsFactory.AddPanelBottomResizeHandle(m_MainPanel);
-            m_OutsideConnectionCountLabel.relativePosition = m_BottomResizeHandle.relativePosition + new Vector3(10, 10);
+            var panelClose = fw.ui.UIHelper.AddButton(m_MainPanel).
+                SetName("Close").
+                SetBackgroundSprites(fw.PreparedSpriteSets.IconClose).
+                MoveInnerTopRightOf(m_MainPanel, new Vector3(5, 2)).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Right).
+                GetButton();
+            panelClose.eventClick += delegate { OnClose(); };
 
-            m_Caption = WidgetsFactory.AddPanelCaption(m_MainPanel, "Advanced Outside Connections Overview", CommonSprites.IconOutsideConnections.normal);
-            var closeButton = m_Caption.Find<UIButton>("Close");
-            closeButton.eventClick += delegate
-            {
-                OnClose();
-            };
+            var panelHeadline = fw.ui.UIHelper.AddLabel(m_MainPanel, true).
+                SetAutoSize(false).
+                SetAutoHeight(true).
+                SetTextScale(1f).
+                SetRelativePosition(new Vector3(0, 10)).
+                ClampHorizontallyBetween(panelIcon, panelClose, 5, 5).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Right).
+                SetName("PanelLabel").
+                SetText("Advanced Outside Connections Overview").
+                SetTextAlignment(UIHorizontalAlignment.Center).
+                SwapZOrder(panelClose).
+                GetLabel();
 
-            InitOutsideConnectionTitle();
+            var dragHandle = fw.ui.UIHelper.AddDragHandle(m_MainPanel).
+                SetRelativePosition(Vector3.zero).
+                SetSize(new Vector2(m_MainPanel.width, fw.ui.UIHelper.DefaultDragHandleSize)).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Right).
+                SetTarget(m_MainPanel).
+                SwapZOrder(panelClose).
+                GetDragHandle();
 
-            m_ScrollablePanel = WidgetsFactory.AddScrollablePanel(m_MainPanel);
-            m_ScrollablePanel.relativePosition = new Vector3(0, 85);
-            m_ScrollablePanel.width = m_MainPanel.width -WidgetsFactory.DefaultVScrollbarWidth - 1;
-            m_ScrollablePanel.height = m_MainPanel.height - m_ScrollablePanel.relativePosition.y - m_BottomResizeHandle.height;
+            InitTitlePanel();
 
-            m_Scrollbar = WidgetsFactory.AddVerticalScrollbar(m_MainPanel, m_ScrollablePanel);
+            m_BottomResizeHandle = fw.ui.UIHelper.AddResizeHandle(m_MainPanel, UIResizeHandle.ResizeEdge.Bottom).GetResizeHandle();
+
+            m_OutsideConnectionCountLabel = fw.ui.UIHelper.AddLabel(m_MainPanel, true).
+                SetName("OutsideConnectionCount").
+                SetPrefix("Outside Connections-Count: ").
+                SetAutoSize(true).
+                MoveInnerBottomLeftOf(m_MainPanel, new Vector3(10, 7)).
+                SwapZOrder(m_BottomResizeHandle).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Bottom).
+                GetLabel();
+
+            const int ScrollablePanelY = 85;
+            m_Scrollbar = fw.ui.UIHelper.AddScrollbarWithTrack(m_MainPanel, UIOrientation.Vertical).
+                SetHeight(m_MainPanel.height - ScrollablePanelY - m_BottomResizeHandle.height).
+                MoveInnerRightOf(m_MainPanel).
+                SetRelativeY(ScrollablePanelY).
+                SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.Top | UIAnchorStyle.Bottom).
+                GetScrollbar();
+
+            m_ScrollablePanel = fw.ui.UIHelper.AddScrollablePanel(m_MainPanel, UIOrientation.Vertical).
+                SetWidth(m_Scrollbar.absolutePosition.x - m_MainPanel.absolutePosition.x - 1).
+                SetHeight(m_Scrollbar.height).
+                MoveLeftOf(m_Scrollbar).
+                SetRelativeY(ScrollablePanelY).
+                SetAnchor(UIAnchorStyle.All).
+                SetVerticalScrollbar(m_Scrollbar).
+                //SetBackgroundSprite(fw.CommonSprites.EmptySprite).
+                GetScrollabelPanel();
 
             var detailPanelGO = new GameObject("AOCDetailMainPanelGO", new Type[] { typeof(OutsideConnectionDetailPanel) });
             m_OutsideConnectionDetailPanel = detailPanelGO.GetComponent<OutsideConnectionDetailPanel>();
@@ -123,60 +171,50 @@ namespace AdvancedOutsideConnection
             m_Initialized = true;
         }
 
-        private void InitOutsideConnectionTitle()
+        private void InitTitlePanel()
         {
-            m_OutsideConnectionTitle = m_MainPanel.AddUIComponent<UIPanel>();
-            m_OutsideConnectionTitle.relativePosition = new Vector3(5, 45);
-            m_OutsideConnectionTitle.anchor = UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Right;
-            m_OutsideConnectionTitle.name = "OutsideConnectionTitle";
-            m_OutsideConnectionTitle.clipChildren = false;
-            m_OutsideConnectionTitle.autoLayout = true;
-            m_OutsideConnectionTitle.autoLayoutDirection = LayoutDirection.Horizontal;
-            m_OutsideConnectionTitle.autoLayoutPadding = new RectOffset(10, 15, 5, 5);
+            m_OutsideConnectionTitle = fw.ui.UIHelper.AddPanel(m_MainPanel).
+                SetRelativePosition(new Vector3(0, 40)).
+                SetSize(new Vector2(m_MainPanel.width, 45)).
+                SetName("OutsideConnectionTitle").
+                SetAutoLayout(true).
+                SetAutoLayoutDirection(LayoutDirection.Horizontal).
+                SetAutoLayoutPadding(new RectOffset(10, 15, 5, 5)).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.Top).
+                GetPanel();
 
-            var titleButtons = new UIButton[3];
+            var transportTypeButton = fw.ui.UIHelper.AddButton(m_OutsideConnectionTitle).
+                SetBackgroundSprites(fw.PreparedSpriteSets.IconPublicTransport).
+                SetName("TransportTypeButton").
+                SetVerticalAlignment(UIVerticalAlignment.Middle).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
+                GetButton();
+            transportTypeButton.eventClick += delegate { OnTransportTypeSort(); };
 
-            titleButtons[0] = m_OutsideConnectionTitle.AddUIComponent<UIButton>();
-            titleButtons[0].name = "TransportTypeButton";
-            titleButtons[0].verticalAlignment = UIVerticalAlignment.Middle;
-            titleButtons[0].horizontalAlignment = UIHorizontalAlignment.Center;
-            titleButtons[0].size = new Vector2(32, 32);
-            titleButtons[0].disabledBgSprite = "InfoIconPublicTransportDisabled";
-            titleButtons[0].pressedBgSprite = "InfoIconPublicTransportPressed";
-            titleButtons[0].normalBgSprite = "InfoIconPublicTransport";
-            titleButtons[0].focusedBgSprite = "InfoIconPublicTransportFocused";
-            titleButtons[0].hoveredBgSprite = "InfoIconPublicTransportHovered";
+            var nameButton = fw.ui.UIHelper.AddButton(m_OutsideConnectionTitle).
+                SetName("NameTitle").
+                SetText("Connection Name").
+                SetTextHorizontalAlignment(UIHorizontalAlignment.Center).
+                SetSize(new Vector2(235, m_OutsideConnectionTitle.height)).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Right).
+                SetTextScale(1.0625f).
+                GetButton();
+            nameButton.eventClick += delegate { OnNameSort(); };
 
-            titleButtons[0].eventClick += delegate
-            {
-                OnTransportTypeSort();
-            };
-
-            titleButtons[1] = m_OutsideConnectionTitle.AddUIComponent<UIButton>();
-            titleButtons[1].name = "NameTitle";
-            titleButtons[1].text = "Connection Name";
-            titleButtons[1].textHorizontalAlignment = UIHorizontalAlignment.Center;
-            titleButtons[1].size = new Vector2(235, 24);
-            titleButtons[1].textScale = 1.0625f;
-
-            titleButtons[1].eventClick += delegate
-            {
-                OnNameSort();
-            };
-
-            titleButtons[2] = WidgetsFactory.AddButton(m_OutsideConnectionTitle, "Direction", "DirectionButton");
-            titleButtons[2].size = new Vector2(100, 24);
-            titleButtons[2].textScale = 1.0625f;
-
-            titleButtons[2].eventClick += delegate
-            {
-                OnDirectionSort();
-            };
+            var directionButton = fw.ui.UIHelper.AddButton(m_OutsideConnectionTitle).
+                SetName("DirectionTitle").
+                SetText("Direction").
+                SetTextHorizontalAlignment(UIHorizontalAlignment.Center).
+                SetSize(new Vector2(100, m_OutsideConnectionTitle.height)).
+                SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.Top).
+                SetTextScale(1.0625f).
+                GetButton();
+            directionButton.eventClick += delegate { OnDirectionSort(); };
         }
 
         private void SetupEventsWithOutsideConnectionInfoViewPanel(bool init)
         {
-            var outsideConnectionInfoPanel = UIView.Find<UIPanel>(UIUtils.OutgoingConnectionInfoViewPanelName);
+            var outsideConnectionInfoPanel = UIView.Find<UIPanel>(fw.CommonPanelNames.OutgoingConnectionInfoViewPanel);
             m_OutsideConnectionsInfoViewPanel = outsideConnectionInfoPanel.gameObject.GetComponent<OutsideConnectionsInfoViewPanel>();
 
             if (init)
@@ -211,7 +249,7 @@ namespace AdvancedOutsideConnection
                 {
                     var gameObject = new GameObject("AOCOutsideConnectionInfo", new System.Type[] { typeof(OutsideConnectionInfo) });
                     outsideConnectionInfo = gameObject.GetComponent<OutsideConnectionInfo>();
-                    outsideConnectionInfo.component.width = m_ScrollablePanel.width - 5;
+                    outsideConnectionInfo.component.width = m_ScrollablePanel.width - 2;
                     outsideConnectionInfo.eventDetailsOpen += OnDetailsOpened;
                     outsideConnectionInfo.eventNameChanged += OnConnectionNameChanged;
                     m_ScrollablePanel.AttachUIComponent(gameObject);

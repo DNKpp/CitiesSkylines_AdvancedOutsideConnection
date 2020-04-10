@@ -10,6 +10,8 @@ using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
+    using fw = framework;
+
     public delegate void OutsideConnectionPropertyChanged<T>(ushort buildingID, T value);
     public delegate void DetailsOpenEventHandler(ushort buildingID);
     public static class Utils
@@ -39,10 +41,10 @@ namespace AdvancedOutsideConnection
         {
             switch (reason)
             {
-                case TransferManager.TransferReason.DummyCar: return CommonSprites.SubBarRoadsHighway.normal;
-                case TransferManager.TransferReason.DummyPlane: return CommonSprites.SubBarPublicTransportPlane.normal;
-                case TransferManager.TransferReason.DummyTrain: return CommonSprites.SubBarPublicTransportTrain.normal;
-                case TransferManager.TransferReason.DummyShip: return CommonSprites.SubBarPublicTransportShip.normal;
+                case TransferManager.TransferReason.DummyCar: return fw.CommonSprites.SubBarRoadsHighway.normal;
+                case TransferManager.TransferReason.DummyPlane: return fw.CommonSprites.SubBarPublicTransportPlane.normal;
+                case TransferManager.TransferReason.DummyTrain: return fw.CommonSprites.SubBarPublicTransportTrain.normal;
+                case TransferManager.TransferReason.DummyShip: return fw.CommonSprites.SubBarPublicTransportShip.normal;
             }
             return "";
         }

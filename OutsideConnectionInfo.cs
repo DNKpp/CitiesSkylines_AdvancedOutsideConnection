@@ -9,6 +9,8 @@ using UnityEngine;
 
 namespace AdvancedOutsideConnection
 {
+    using fw = framework;
+
     class OutsideConnectionInfo : TableRowComponent
     {
         private ushort m_BuildingID = 0;
@@ -30,15 +32,36 @@ namespace AdvancedOutsideConnection
 
             base.Awake();
 
-            m_TransportTypeSprite = m_MainPanel.AddUIComponent<UISprite>();
-            m_TransportTypeSprite.anchor = UIAnchorStyle.Left | UIAnchorStyle.CenterVertical;
-            m_TransportTypeSprite.size = new Vector2(28, 28);
-            m_TransportTypeSprite.relativePosition = new Vector3(12, 8);
+            var iconSize = new Vector2(28, 28);
+            m_TransportTypeSprite = fw.ui.UIHelper.AddSprite(m_MainPanel).
+                SetSize(iconSize).
+                SetRelativePosition(new Vector3(12, 8)).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.CenterVertical).
+                GetSprite(true);
 
-            m_ConnectionNameTextfield = WidgetsFactory.AddTextField(m_MainPanel);
-            m_ConnectionNameTextfield.size = new Vector2(175, 35);
-            m_ConnectionNameTextfield.relativePosition = new Vector3(75, 10);
-            m_ConnectionNameTextfield.anchor = UIAnchorStyle.Right | UIAnchorStyle.Left | UIAnchorStyle.CenterVertical;
+            m_DetailViewButton = fw.ui.UIHelper.AddButton(m_MainPanel).
+                SetName("DetailViewButton").
+                SetSize(iconSize).
+                MoveInnerRightOf(m_MainPanel, 4).
+                SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.CenterVertical).
+                SetBackgroundSprites(fw.PreparedSpriteSets.IconLineDetail).
+                GetButton();
+
+            m_DirectionLabel = fw.ui.UIHelper.AddLabel(m_MainPanel).
+                SetName("DirectionLabel").
+                SetAutoSize(false).
+                SetTextAlignment(UIHorizontalAlignment.Center).
+                SetSize(new Vector2(60, 35)).
+                MoveLeftOf(m_DetailViewButton, 30).
+                SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.CenterVertical).
+                GetLabel(true);
+
+            m_ConnectionNameTextfield = fw.ui.UIHelper.AddTextField(m_MainPanel).
+                SetHeight(35).
+                SetRelativeY(10).
+                ClampHorizontallyBetween(m_TransportTypeSprite, m_DirectionLabel, 15, 25).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Right | UIAnchorStyle.CenterVertical).
+                GetTextField(true);
             m_ConnectionNameTextfield.eventTextSubmitted += delegate (UIComponent component, string newName)
             {
                 if (!m_IsRefreshing && m_BuildingID != 0)
@@ -47,26 +70,6 @@ namespace AdvancedOutsideConnection
                     eventNameChanged?.Invoke(m_BuildingID, newName);
                 }
             };
-
-            m_DetailViewButton = m_MainPanel.AddUIComponent<UIButton>();
-            m_DetailViewButton.size = new Vector2(28, 28);
-            m_DetailViewButton.relativePosition = new Vector3(m_MainPanel.width - 8 - m_DetailViewButton.width, 8);
-            m_DetailViewButton.anchor = UIAnchorStyle.Right | UIAnchorStyle.CenterVertical;
-            
-            m_DetailViewButton.normalBgSprite = "LineDetailButton";
-            m_DetailViewButton.hoveredBgSprite = "LineDetailButtonHovered";
-            //m_DetailViewButton.focusedBgSprite = "";
-            m_DetailViewButton.pressedBgSprite = "LineDetailButtonPressed";
-            //m_DetailViewButton.disabledBgSprite = "";
-
-            m_DirectionLabel = WidgetsFactory.AddLabel(m_MainPanel, "", false, "DirectionLabel");
-            m_DirectionLabel.autoSize = false;
-            m_DirectionLabel.textAlignment = UIHorizontalAlignment.Center;
-            m_DirectionLabel.width = 60;
-            m_DirectionLabel.height = m_ConnectionNameTextfield.height;
-            m_DirectionLabel.relativePosition = m_ConnectionNameTextfield.relativePosition + new Vector3(m_ConnectionNameTextfield.width + 15, 0);
-            m_DirectionLabel.anchor = UIAnchorStyle.Right | UIAnchorStyle.CenterVertical;
-
 
             m_DetailViewButton.eventClick += delegate
             {
@@ -107,7 +110,6 @@ namespace AdvancedOutsideConnection
 
             m_IsRefreshing = true;
 
-            var transportInfo = Utils.QueryTransportInfo(m_BuildingID);
             m_TransportTypeSprite.spriteName = Utils.GetSpriteNameForTransferReason(connectionAI.m_dummyTrafficReason);
             m_ConnectionNameTextfield.text = m_CachedSettings.Name;
 
