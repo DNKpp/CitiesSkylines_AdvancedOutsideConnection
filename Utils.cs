@@ -17,6 +17,27 @@ namespace AdvancedOutsideConnection
     public delegate void DetailsOpenEventHandler(ushort buildingID);
     public static class Utils
     {
+        public static void ModMaterialIfNecessary(ref TransferManager.TransferReason material, int[] ratios, TransferManager.TransferReason[] expectedMaterials)
+        {
+            var offerMaterial = material;
+            var index = Array.FindIndex(expectedMaterials, row => row == offerMaterial);
+            if (index != -1)
+            {
+                var rnd = SimulationManager.instance.m_randomizer.Int32(10000);
+                int newMatIndex = 0;
+                foreach (var ratio in ratios)
+                {
+                    if (rnd <= ratio)
+                    {
+                        break;
+                    }
+                    rnd -= ratio;
+                    ++newMatIndex;
+                }
+                material = expectedMaterials[newMatIndex];
+            }
+        }
+
         public static void SetupSpriteForMaterial(UISprite sprite, TransferManager.TransferReason material)
         {
             string spriteName = "";

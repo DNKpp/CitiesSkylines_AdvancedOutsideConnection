@@ -58,6 +58,8 @@
   <ItemGroup>
     <Compile Include="CitiesDefinitions.cs" />
     <Compile Include="HarmonyPatches\CitizenManagerGetCitizenInfo.cs" />
+    <Compile Include="HarmonyPatches\TransferManagerAddIncomingOffer.cs" />
+    <Compile Include="HarmonyPatches\TransferManagerAddOutgoingOffer.cs" />
     <Compile Include="HarmonyPatches\OutsideConnectionStartConnectionTransferImpl.cs" />
     <Compile Include="HarmonyPatches\OutsideConnectionAddConnectionOffers.cs" />
     <Compile Include="HarmonyPatches\OutsideConnectionGenerateName.cs" />
