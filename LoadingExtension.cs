@@ -75,7 +75,6 @@ namespace AdvancedOutsideConnection
         private void Init(bool late)
         {
             InGame = true;
-            m_HarmonyInstance.PatchAll();
 
             // This is needed in cases where the mod is hot reloaded. Due to its implementation, the SerializableDataExtension OnCreated function will only be called during game loads.
             // This way we manually force the call, so we can relay on correct behavior afterwards.
@@ -84,6 +83,8 @@ namespace AdvancedOutsideConnection
             if (late)
             {
                 Utils.Log("LoadingExtension Init late.");
+                m_HarmonyInstance.UnpatchAll(m_HarmonyIdentifier);
+
                 var serDataWrapper = SimulationManager.instance.m_SerializableDataWrapper;
                 if (serDataWrapper != null)
                 {
@@ -98,6 +99,8 @@ namespace AdvancedOutsideConnection
                 }
             }
 #endif
+
+            m_HarmonyInstance.PatchAll();
             SerializableDataExtension.instance.Loaded = true;
  
             var outConMgr = OutsideConnectionSettingsManager.instance;
