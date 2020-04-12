@@ -60,7 +60,7 @@ namespace AdvancedOutsideConnection
 
             public void EnableDelete(bool enable)
             {
-                m_DeleteButton.isEnabled = enable;
+                m_DeleteButton.isVisible = enable;
             }
 
             public event PropertyChangedEventHandler<string> eventNameSubmitted;
