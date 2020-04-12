@@ -10,7 +10,7 @@ namespace AdvancedOutsideConnection
 {
     public class Mod : IUserMod
     {
-        private static readonly string version = "0.0.1";
+        private static readonly string version = "1.3";
 
         public static string ModName => "AdvancedOutsideConnection";
 

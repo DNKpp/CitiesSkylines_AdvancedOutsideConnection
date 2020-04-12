@@ -33,6 +33,8 @@ namespace AdvancedOutsideConnection
         public Building.Flags CurrentDirectionFlags;
 
         public int DummyTrafficFactor = -1;
+        public int CargoCapacity = -1;
+        public int ResidentCapacity = -1;
 
         // When a custom building name is applied, the GenerateName function won't be called.
         // Let's just introduce a custom Name instead, so we don't have to patch the more central
@@ -48,7 +50,7 @@ namespace AdvancedOutsideConnection
     class OutsideConnectionSettingsManager : Singleton<OutsideConnectionSettingsManager>
     {
         private static readonly string _dataID = "AOC_Data";
-        private static readonly ushort _dataVersion = 4;
+        private static readonly ushort _dataVersion = 5;
 
         private Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict = null;
 
@@ -107,15 +109,38 @@ namespace AdvancedOutsideConnection
                     var building = Utils.QueryBuilding(buildingID);
                     settings.CurrentDirectionFlags = building.m_flags & Building.Flags.IncomingOutgoing;
                     settings.OriginalDirectionFlags = settings.CurrentDirectionFlags;
-                    settings.DummyTrafficFactor = connectionAI.m_dummyTrafficFactor;
-                    settings.TouristFactors = Utils.GetTouristFactorsFromOutsideConnection(buildingID);
-                    settings.ImportResourceRatio = Utils.GetDefaultImportResourceRatio();
-                    settings.ExportResourceRatio = Utils.GetDefaultExportResourceRatio();
+
+                    ValidateOutsideConnectionSettings(buildingID, ref settings);
 
                     m_SettingsDict.Add(buildingID, settings);
                 }
                 ++typeCount[(int)transferReason];
             }
+        }
+
+        private static void ValidateOutsideConnectionSettings(ushort buildingID, ref OutsideConnectionSettings settings)
+        {
+            var connectionAI = Utils.QueryBuildingAI(buildingID) as OutsideConnectionAI;
+
+            if (settings.DummyTrafficFactor < 0)
+                settings.DummyTrafficFactor = connectionAI.m_dummyTrafficFactor;
+
+            if (settings.CargoCapacity < 0)
+                settings.CargoCapacity = connectionAI.m_cargoCapacity;
+
+            if (settings.ResidentCapacity < 0)
+                settings.ResidentCapacity = connectionAI.m_residentCapacity;
+
+            if (settings.TouristFactors == null || settings.TouristFactors.Length != 3)
+                settings.TouristFactors = Utils.GetTouristFactorsFromOutsideConnection(buildingID);
+
+            if (settings.ImportResourceRatio == null || settings.ImportResourceRatio.Length != Utils.ImportResources.Length ||
+                settings.ImportResourceRatio.Aggregate((a, b) => b + a) != 10000)
+                settings.ImportResourceRatio = Utils.GetDefaultImportResourceRatio();
+
+            if (settings.ExportResourceRatio == null || settings.ExportResourceRatio.Length != Utils.ExportResources.Length ||
+                settings.ExportResourceRatio.Aggregate((a, b) => b + a) != 10000)
+                settings.ExportResourceRatio = Utils.GetDefaultExportResourceRatio();
         }
 
         private static void OnSaveData()
@@ -154,6 +179,9 @@ namespace AdvancedOutsideConnection
                     SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.ExportResourceRatio.Length, elementBuffer);
                     foreach (var value in keyValue.Value.ExportResourceRatio)
                         SerializableDataExtension.WriteInt32(value, elementBuffer);
+
+                    SerializableDataExtension.WriteInt32(keyValue.Value.CargoCapacity, elementBuffer);
+                    SerializableDataExtension.WriteInt32(keyValue.Value.ResidentCapacity, elementBuffer);
 
                     SerializableDataExtension.WriteByteArray(elementBuffer, buffer);
                 }
@@ -261,16 +289,13 @@ namespace AdvancedOutsideConnection
                     settings.ExportResourceRatio = ratios;
                 }
 
-                if (settings.TouristFactors == null || settings.TouristFactors.Length != 3)
-                    settings.TouristFactors = Utils.GetTouristFactorsFromOutsideConnection(buildingID);
+                if (5 <= version)
+                {
+                    settings.CargoCapacity = SerializableDataExtension.ReadInt32(buffer, ref index);
+                    settings.ResidentCapacity = SerializableDataExtension.ReadInt32(buffer, ref index);
+                }
 
-                if (settings.ImportResourceRatio == null || settings.ImportResourceRatio.Length != Utils.ImportResources.Length ||
-                    settings.ImportResourceRatio.Aggregate((a, b) => b + a) != 10000)
-                    settings.ImportResourceRatio = Utils.GetDefaultImportResourceRatio();
-
-                if (settings.ExportResourceRatio == null || settings.ExportResourceRatio.Length != Utils.ExportResources.Length ||
-                    settings.ExportResourceRatio.Aggregate((a, b) => b + a) != 10000)
-                    settings.ExportResourceRatio = Utils.GetDefaultExportResourceRatio();
+                ValidateOutsideConnectionSettings(buildingID, ref settings);
 
                 if (settingsDict.ContainsKey(buildingID))
                     Utils.LogWarning("Overrides existing outside connection with buildingID: " + buildingID);

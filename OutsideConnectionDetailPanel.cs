@@ -174,6 +174,8 @@ namespace AdvancedOutsideConnection
         private UICheckBox m_DirectionOutCheckbox = null;
         private UILabel m_TransportTypeLabel = null;
         private UITextField m_DummyTrafficFactorTextfield = null;
+        private UITextField m_ResidentCapacityTextfield = null;
+        private UITextField m_CargoCapacityTextfield = null;
         private UICheckBox[] m_NameModeCheckBoxes = null;
 
         private UIPanel m_TouristSubPanel = null;
@@ -365,6 +367,58 @@ namespace AdvancedOutsideConnection
                 GetTextField(true);
             m_DummyTrafficFactorTextfield.eventTextSubmitted += OnDummyTrafficFactorChanged;
 
+            var cargoCapacityFactorLabel = fw.ui.UIHelper.AddLabel(m_SettingsPanel).
+                SetName("CargoCapacityLabel").
+                SetPrefix("Cargo Capacity: ").
+                SetAutoSize(true).
+                SetTextScale(textScale).
+                MoveBottomOf(dummyTrafficFactorLabel, 10).
+                SetRelativeX(dummyTrafficFactorLabel.relativePosition.x).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
+                GetLabel();
+
+            m_CargoCapacityTextfield = fw.ui.UIHelper.AddTextField(m_SettingsPanel).
+                SetName("CargoCapacityTextfield").
+                SetNumericalOnly(true).
+                SetTextScale(textScale).
+                SetNormalBgSprite(fw.CommonSprites.InfoViewPanel).
+                SetColor(Color.black).
+                SetTextColor(Color.white).
+                SetPadding(new RectOffset(0, 0, 5, 5)).
+                SetTooltip("Modifies the cargo capacity. Value is clamped between 0 and 1.000.000.").
+                SetSize(new Vector2(75, 20)).
+                SetRelativeX(m_DummyTrafficFactorTextfield.relativePosition.x).
+                SetRelativeY(cargoCapacityFactorLabel.relativePosition.y - 5).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
+                GetTextField(true);
+            m_CargoCapacityTextfield.eventTextSubmitted += OnCargoCapacityChanged;
+
+            var residentCapacityFactorLabel = fw.ui.UIHelper.AddLabel(m_SettingsPanel).
+                SetName("ResidentCapacityLabel").
+                SetPrefix("Resident Capacity: ").
+                SetAutoSize(true).
+                SetTextScale(textScale).
+                MoveBottomOf(cargoCapacityFactorLabel, 10).
+                SetRelativeX(cargoCapacityFactorLabel.relativePosition.x).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
+                GetLabel();
+
+            m_ResidentCapacityTextfield = fw.ui.UIHelper.AddTextField(m_SettingsPanel).
+                SetName("ResidentCapacityTextfield").
+                SetNumericalOnly(true).
+                SetTextScale(textScale).
+                SetNormalBgSprite(fw.CommonSprites.InfoViewPanel).
+                SetColor(Color.black).
+                SetTextColor(Color.white).
+                SetPadding(new RectOffset(0, 0, 5, 5)).
+                SetTooltip("Modifies the resident capacity. Value is clamped between 0 and 1.000.000.").
+                SetSize(new Vector2(75, 20)).
+                SetRelativeX(m_CargoCapacityTextfield.relativePosition.x).
+                SetRelativeY(residentCapacityFactorLabel.relativePosition.y - 5).
+                SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
+                GetTextField(true);
+            m_ResidentCapacityTextfield.eventTextSubmitted += OnResidentCapacityChanged;
+
             InitTouristSubPanel();
             InitGoodsSubPanel();
         }
@@ -388,7 +442,7 @@ namespace AdvancedOutsideConnection
                 SetSpriteName(fw.CommonSprites.IconOutsideConnections.normal).
                 SetColor(Color.gray).
                 SetSize(new Vector2(28, 28)).
-                MoveInnerTopRightOf(m_GoodsSubPanel, new Vector3(0, 0)).
+                MoveInnerTopRightOf(m_GoodsSubPanel, new Vector3(5, 0)).
                 GetSprite();
 
             m_ResourceTabstrip = fw.ui.UIHelper.AddTabstripWithButtons(m_GoodsSubPanel, new string[] { "Import", "Export" }, textScale).
@@ -458,9 +512,9 @@ namespace AdvancedOutsideConnection
                 SetBackgroundSprite(fw.CommonSprites.GenericPanel).
                 SetColor(Color.white).
                 SetRelativeX(5).
-                MoveBottomOf(m_DummyTrafficFactorTextfield, 5).
+                MoveBottomOf(m_ResidentCapacityTextfield, 5).
                 SpanInnerBottom(m_SettingsPanel, 5).
-                SpanInnerRight(m_DummyTrafficFactorTextfield).
+                SpanInnerRight(m_ResidentCapacityTextfield).
                 SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Bottom).
                 GetPanel();
 
@@ -478,8 +532,7 @@ namespace AdvancedOutsideConnection
                 SetName("LowWealthyIcon").
                 SetSpriteName(fw.CommonSprites.InfoIconLandValue.disabled).
                 SetSize(wealthyIconSize).
-                MoveRightOf(touristIcon).
-                SetRelativeY(0).
+                MoveBottomRightOf(touristIcon, new Vector3(-5, -5)).
                 GetSprite();
 
             var mediumWealthyIcon = fw.ui.UIHelper.AddSprite(m_TouristSubPanel).
@@ -816,6 +869,32 @@ namespace AdvancedOutsideConnection
             m_IsRefreshing = oldIsRefreshing;
         }
 
+        private void RefreshCargoCapacityTextfield()
+        {
+            var oldIsRefreshing = m_IsRefreshing;
+            m_IsRefreshing = true;
+
+            var connectionAI = Utils.QueryBuildingAI(buildingID) as OutsideConnectionAI;
+            var cargoCapacity = m_CachedSettings.CargoCapacity < 0 ? connectionAI.m_cargoCapacity : m_CachedSettings.CargoCapacity;
+            m_CargoCapacityTextfield.text = cargoCapacity.ToString();
+
+            m_IsRefreshing = oldIsRefreshing;
+        }
+
+
+        private void RefreshResidentCapacityTextfield()
+        {
+            var oldIsRefreshing = m_IsRefreshing;
+            m_IsRefreshing = true;
+
+            var connectionAI = Utils.QueryBuildingAI(buildingID) as OutsideConnectionAI;
+            var residentCapacity = m_CachedSettings.ResidentCapacity < 0 ? connectionAI.m_residentCapacity : m_CachedSettings.ResidentCapacity;
+            m_ResidentCapacityTextfield.text = residentCapacity.ToString();
+
+            m_IsRefreshing = oldIsRefreshing;
+        }
+
+
         private void RefreshTouristPanel()
         {
             var oldIsRefreshing = m_IsRefreshing;
@@ -857,6 +936,8 @@ namespace AdvancedOutsideConnection
             RefreshDirectionCheckbox(m_DirectionInCheckbox);
             RefreshDirectionCheckbox(m_DirectionOutCheckbox);
             RefreshDummyTrafficFactorTextfield();
+            RefreshCargoCapacityTextfield();
+            RefreshResidentCapacityTextfield();
             RefreshTouristPanel();
             RefreshResourceComponents();
 
@@ -1004,6 +1085,45 @@ namespace AdvancedOutsideConnection
 
             RefreshDummyTrafficFactorTextfield();
         }
+
+        private void OnCargoCapacityChanged(UIComponent component, string newText)
+        {
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            var buildingAI = Utils.QueryBuildingAI(m_BuildingID) as OutsideConnectionAI;
+            if (string.IsNullOrEmpty(newText))
+            {
+                m_CachedSettings.CargoCapacity = buildingAI.m_cargoCapacity;
+            }
+            else
+            {
+                if (int.TryParse(newText, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out int value))
+                    m_CachedSettings.CargoCapacity = Mathf.Clamp(value, 0, 1000000);
+            }
+
+            RefreshCargoCapacityTextfield();
+        }
+
+        private void OnResidentCapacityChanged(UIComponent component, string newText)
+        {
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            var buildingAI = Utils.QueryBuildingAI(m_BuildingID) as OutsideConnectionAI;
+            if (string.IsNullOrEmpty(newText))
+            {
+                m_CachedSettings.ResidentCapacity = buildingAI.m_residentCapacity;
+            }
+            else
+            {
+                if (int.TryParse(newText, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out int value))
+                    m_CachedSettings.ResidentCapacity = Mathf.Clamp(value, 0, 1000000);
+            }
+
+            RefreshResidentCapacityTextfield();
+        }
+
 
         private void OnShowHideRoutesClicked(UIComponent component, UIMouseEventParameter mouseParam)
         {

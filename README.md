@@ -25,7 +25,9 @@ The following patches will be applied:
 Class | Function | Prefix | Postfix | Description
 ------|----------|--------|---------|----------------
 OutsideConnectionAI | GenerateName | no | yes | If user applies any of the two custom name settings, Postfix function will **override the returned string**.
-OutsideConnectionAI | AddConnectionOffers | yes | no | Alters touristFactorN and dummyTrafficFactor params.
+OutsideConnectionAI | AddConnectionOffers | yes | no | Alters touristFactorN, cargoCapacity, residentCapacity and dummyTrafficFactor params.
 OutsideConnectionAI | StartConnectionTransferImpl | yes | no | Alters touristFactorN params.
+TransferManager | AddIncomingOffers | yes | no | Alters material type.
+TransferManager | AddOutgoingOffers | yes | no | Alters material type.
 Citizen | GetCitizenInfo | yes | no | Only active in debug mode.
 

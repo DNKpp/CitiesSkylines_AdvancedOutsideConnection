@@ -12,12 +12,18 @@ namespace AdvancedOutsideConnection.HarmonyPatches
     [HarmonyPatch("AddConnectionOffers")]
     class OutsideConnectionAddConnectionOffers
     {
-        private static bool Prefix(ushort buildingID, ref int touristFactor0, ref int touristFactor1, ref int touristFactor2, ref int dummyTrafficFactor)
+        private static bool Prefix(ushort buildingID, ref int cargoCapacity, ref int residentCapacity, ref int touristFactor0, ref int touristFactor1, ref int touristFactor2, ref int dummyTrafficFactor)
         {
             if (OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(buildingID, out OutsideConnectionSettings settings))
             {
                 if (0 <= settings.DummyTrafficFactor)
                     dummyTrafficFactor = settings.DummyTrafficFactor;
+
+                if (0 <= settings.CargoCapacity)
+                    cargoCapacity = settings.CargoCapacity;
+
+                if (0 <= settings.ResidentCapacity)
+                    residentCapacity = settings.ResidentCapacity;
 
                 if (settings.TouristFactors != null && 3 <= settings.TouristFactors.Length)
                 {
