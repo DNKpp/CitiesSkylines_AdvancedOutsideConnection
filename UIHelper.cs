@@ -232,15 +232,26 @@ namespace AdvancedOutsideConnection.framework.ui
                 AddDefaultTrackAndThumb();
         }
 
+        public static UIScrollbarHelper CreateScrollbarWithTrack(UIOrientation orientation)
+        {
+            var go = new GameObject("Scrollbar");
+            return SetupScrollbarWithTrack(go.AddComponent<UIScrollbar>(), orientation);
+        }
+
         public static UIScrollbarHelper AddScrollbarWithTrack(UIComponent parent, UIOrientation orientation)
         {
+            return SetupScrollbarWithTrack(parent.AddUIComponent<UIScrollbar>(), orientation);
+        }
+
+        private static UIScrollbarHelper SetupScrollbarWithTrack(UIScrollbar scrollbar, UIOrientation orientation)
+        {
+            var helper = new UIScrollbarHelper(scrollbar);
             var size = Vector2.zero;
             if (orientation == UIOrientation.Horizontal)
                 size = new Vector2(100, DefaultVScrollbarWidth);
             else
                 size = new Vector2(DefaultVScrollbarWidth, 100);
 
-            var helper = new UIScrollbarHelper(parent.AddUIComponent<UIScrollbar>());
             return helper.SetName("Scrollbar").
                 SetRelativePosition(Vector3.zero).
                 SetSize(size).
@@ -272,6 +283,7 @@ namespace AdvancedOutsideConnection.framework.ui
         {
             var helper = new UIButtonHelper(parent.AddUIComponent<UIButton>());
             helper.SetName("Button").
+                SetAutoSize(true).
                 SetRelativePosition(Vector3.zero);
             return helper;
         }
@@ -287,6 +299,59 @@ namespace AdvancedOutsideConnection.framework.ui
                 SetForegroundSpriteMode(UIForegroundSpriteMode.Stretch).
                 SetActiveStateIndex(0);
             return helper;
+        }
+
+        public static UIDropDownHelper AddDropDown(UIComponent parent)
+        {
+            var helper = new UIDropDownHelper(parent.AddUIComponent<UIDropDown>());
+            helper.SetName("DropDown").
+                SetRelativePosition(Vector3.zero).
+                SetSize(new Vector2(75, 25)).
+                AddDefaultScrollbar().
+                SetListBackground(CommonSprites.OptionsDropboxListbox).
+                SetItemHighlight("ListItemHighlight").
+                SetItemHover("ListItemHover").
+                SetVerticalAlignment(UIVerticalAlignment.Middle).
+                SetListHeight(200).
+                SetBackgroundSprites(PreparedSpriteSets.OptionsDropbox);
+            return helper;
+        }
+
+        public static UITabstripHelper AddTabstrip(UIComponent parent)
+        {
+            var tabstrip = parent.AddUIComponent<UITabstrip>();
+            var helper = new UITabstripHelper(tabstrip).
+                SetName("Tabstriip").
+                SetPosition(Vector3.zero).
+                SetAutoSize(true).
+                SetPadding(new RectOffset(1, 1, 2, 2));
+            return helper;
+        }
+
+        public static UITabstripHelper AddTabstripWithButtons(UIComponent parent, string[] buttonTexts, float textScale)
+        {
+            var helper = AddTabstrip(parent);
+            var tabstrip = helper.GetTabtrip();
+
+            foreach (var text in buttonTexts)
+            {
+                AddButton(tabstrip).
+                    SetName("Button-" + text).
+                    SetAutoSize(true).
+                    SetTextScale(textScale).
+                    SetText(text).
+                    SetTextPadding(new RectOffset(5, 5, 2, 2)).
+                    SetBackgroundSprites(CommonSprites.GenericTab);
+            }
+
+            return helper;
+        }
+
+        public static UITabContainerHelper AddTabContainer(UIComponent parent)
+        {
+            var helper = new UITabContainerHelper(parent.AddUIComponent<UITabContainer>());
+            return helper.SetName("TabContainer").
+                SetPosition(Vector3.zero);
         }
     }
 
@@ -502,6 +567,7 @@ namespace AdvancedOutsideConnection.framework.ui
 
         public virtual T SetSize(Vector2 size)
         {
+            GetComponent().autoSize = false;
             GetComponent().size = size;
             return this as T;
         }
@@ -609,6 +675,34 @@ namespace AdvancedOutsideConnection.framework.ui
             return this as T;
         }
 
+        public T SpanLeft(UIComponent other, float padding = 0)
+        {
+            var oldX = GetComponent().absolutePosition.x;
+            SetAbsoluteX(other.absolutePosition.x + other.width + padding);
+            SetWidth(GetComponent().width + (oldX - GetComponent().absolutePosition.x));
+            return this as T;
+        }
+
+        public T SpanTop(UIComponent other, float padding = 0)
+        {
+            var oldY = GetComponent().absolutePosition.y;
+            SetAbsoluteX(other.absolutePosition.y + other.height + padding);
+            SetHeight(GetComponent().height + (oldY - GetComponent().absolutePosition.y));
+            return this as T;
+        }
+
+        public T SpanRight(UIComponent other, float padding = 0)
+        {
+            SetWidth(Mathf.Max(0, other.absolutePosition.x - (GetComponent().absolutePosition.x + padding)));
+            return this as T;
+        }
+
+        public T SpanBottom(UIComponent other, float padding = 0)
+        {
+            SetHeight(Mathf.Max(0, other.absolutePosition.y - (GetComponent().absolutePosition.y + padding)));
+            return this as T;
+        }
+
         public T SpanInnerTopLeft(UIComponent other)
         {
             SpanInnerTop(other);
@@ -677,7 +771,7 @@ namespace AdvancedOutsideConnection.framework.ui
         {
             var oldY = GetComponent().absolutePosition.y;
             SetAbsoluteX(other.absolutePosition.y + padding);
-            SetWidth(GetComponent().height + (oldY - GetComponent().absolutePosition.y));
+            SetHeight(GetComponent().height + (oldY - GetComponent().absolutePosition.y));
             return this as T;
         }
 
@@ -2514,6 +2608,306 @@ namespace AdvancedOutsideConnection.framework.ui
             //scrollbarThumb.width = m_Scrollbar.width - 6;
             m_Slider.thumbObject = thumb;
 
+            return this;
+        }
+    }
+
+    public class UIDropDownHelper : UIInteractiveComponentHelper<UIDropDownHelper>
+    {
+        private UIDropDown m_DropDown = null;
+
+        public UIDropDownHelper(UIDropDown dropDown)
+        {
+            m_DropDown = dropDown;
+            if (m_DropDown == null)
+                throw new NullReferenceException();
+
+            m_DropDown.triggerButton = m_DropDown;
+        }
+
+        protected override UIComponent GetComponent()
+        {
+            return m_DropDown;
+        }
+
+        public UIDropDown GetDropDown()
+        {
+            if (!base.IsValid())
+                throw new UIHelperException("UIComponentHelper has invalid state.");
+
+            //if (string.IsNullOrEmpty(m_CheckBox.text) && string.IsNullOrEmpty(m_CheckBox.normalBgSprite))
+            //    throw new UIHelperException("UIButton has neither text nor normalBgSprite.");
+            return m_DropDown;
+        }
+
+        public UIDropDownHelper SetAutoListWidth(bool enable)
+        {
+            m_DropDown.autoListWidth = enable;
+            return this;
+        }
+
+        public UIDropDownHelper SetFilteredItems(int[] items)
+        {
+            m_DropDown.filteredItems = items;
+            return this;
+        }
+
+        public UIDropDownHelper SetItemHeight(int height)
+        {
+            m_DropDown.itemHeight = height;
+            return this;
+        }
+
+        public UIDropDownHelper SetItemHighlight(string highlight)
+        {
+            m_DropDown.itemHighlight = highlight;
+            return this;
+        }
+
+        public UIDropDownHelper SetItemHover(string hover)
+        {
+            m_DropDown.itemHover = hover;
+            return this;
+        }
+
+        public UIDropDownHelper SetItemPadding(RectOffset padding)
+        {
+            m_DropDown.itemPadding = padding;
+            return this;
+        }
+
+        public UIDropDownHelper SetItems(string[] items)
+        {
+            m_DropDown.items = items;
+            return this;
+        }
+
+        public UIDropDownHelper SetListBackground(string spriteName)
+        {
+            m_DropDown.listBackground = spriteName;
+            return this;
+        }
+
+        public UIDropDownHelper SetListHeight(int height)
+        {
+            m_DropDown.listHeight = height;
+            return this;
+        }
+
+        public UIDropDownHelper SetListOffset(Vector2 offset)
+        {
+            m_DropDown.listOffset = offset;
+            return this;
+        }
+
+        public UIDropDownHelper SetListPadding(RectOffset padding)
+        {
+            m_DropDown.listPadding = padding;
+            return this;
+        }
+
+        public UIDropDownHelper SetListPosition(UIDropDown.PopupListPosition position)
+        {
+            m_DropDown.listPosition = position;
+            return this;
+        }
+
+        public UIDropDownHelper SetListScrollbar(UIScrollbar scrollbar)
+        {
+            m_DropDown.listScrollbar = scrollbar;
+            return this;
+        }
+
+        public UIDropDownHelper SetListWidth(int width)
+        {
+            m_DropDown.listWidth = width;
+            return this;
+        }
+
+        public UIDropDownHelper SetLocalizedItems(string[] items)
+        {
+            m_DropDown.localizedItems = items;
+            return this;
+        }
+
+        public UIDropDownHelper SetPopupColor(Color32 color)
+        {
+            m_DropDown.popupColor = color;
+            return this;
+        }
+
+        public UIDropDownHelper SetPopupTextColor(Color32 color)
+        {
+            m_DropDown.popupTextColor = color;
+            return this;
+        }
+
+        public UIDropDownHelper SetSelectedIndex(int index)
+        {
+            m_DropDown.selectedIndex = index;
+            return this;
+        }
+
+        public UIDropDownHelper SetSelectedValue(string value)
+        {
+            m_DropDown.selectedValue = value;
+            return this;
+        }
+
+        public UIDropDownHelper SetTextFieldPadding(RectOffset padding)
+        {
+            m_DropDown.textFieldPadding = padding;
+            return this;
+        }
+
+        public UIDropDownHelper SetTriggerButton(UIComponent button)
+        {
+            m_DropDown.triggerButton = button;
+            return this;
+        }
+
+        public UIDropDownHelper AddDefaultScrollbar()
+        {
+            var scrollbarHelper = UIHelper.CreateScrollbarWithTrack(UIOrientation.Vertical);
+            SetListScrollbar(scrollbarHelper.GetScrollbar());
+            return this;
+        }
+    }
+
+    public class UITabstripHelper : UIComponentHelper<UITabstripHelper>
+    {
+        private UITabstrip m_Tabstrip = null;
+
+        public UITabstripHelper(UITabstrip tabstrip)
+        {
+            m_Tabstrip = tabstrip;
+            if (m_Tabstrip == null)
+                throw new NullReferenceException();
+        }
+
+        protected override UIComponent GetComponent()
+        {
+            return m_Tabstrip;
+        }
+
+        public UITabstrip GetTabtrip()
+        {
+            if (!base.IsValid())
+                throw new UIHelperException("UIComponentHelper has invalid state.");
+
+            //if (string.IsNullOrEmpty(m_CheckBox.text) && string.IsNullOrEmpty(m_CheckBox.normalBgSprite))
+            //    throw new UIHelperException("UIButton has neither text nor normalBgSprite.");
+            return m_Tabstrip;
+        }
+
+        public UITabstripHelper SetAtlas(UITextureAtlas atlas)
+        {
+            m_Tabstrip.atlas = atlas;
+            return this;
+        }
+
+        public UITabstripHelper SetBackgroundSprite(string spriteName)
+        {
+            m_Tabstrip.backgroundSprite = spriteName;
+            return this;
+        }
+
+        public UITabstripHelper SetCloseButton(UIComponent button)
+        {
+            m_Tabstrip.closeButton = button;
+            return this;
+        }
+
+        public UITabstripHelper SetCloseOnReclick(bool enable)
+        {
+            m_Tabstrip.closeOnReclick = enable;
+            return this;
+        }
+
+        public UITabstripHelper SetNavigateWithArrowTabKeys(bool enable)
+        {
+            m_Tabstrip.navigateWithArrowTabKeys = enable;
+            return this;
+        }
+
+        public UITabstripHelper SetPadding(RectOffset padding)
+        {
+            m_Tabstrip.padding = padding;
+            return this;
+        }
+
+        public UITabstripHelper SetSelectedIndex(int index)
+        {
+            m_Tabstrip.selectedIndex = index;
+            return this;
+        }
+
+        public UITabstripHelper SetStartSelectedIndex(int index)
+        {
+            m_Tabstrip.startSelectedIndex = index;
+            return this;
+        }
+
+        public UITabstripHelper SetTabPages(UITabContainer tabContainer)
+        {
+            m_Tabstrip.tabPages = tabContainer;
+            return this;
+        }
+    }
+
+    public class UITabContainerHelper : UIComponentHelper<UITabContainerHelper>
+    {
+        private UITabContainer m_TabContainer = null;
+
+        public UITabContainerHelper(UITabContainer tabContainer)
+        {
+            m_TabContainer = tabContainer;
+            if (m_TabContainer == null)
+                throw new NullReferenceException();
+        }
+
+        protected override UIComponent GetComponent()
+        {
+            return m_TabContainer;
+        }
+
+        public UITabContainer GetTabContainer()
+        {
+            if (!base.IsValid())
+                throw new UIHelperException("UIComponentHelper has invalid state.");
+
+            //if (string.IsNullOrEmpty(m_CheckBox.text) && string.IsNullOrEmpty(m_CheckBox.normalBgSprite))
+            //    throw new UIHelperException("UIButton has neither text nor normalBgSprite.");
+            return m_TabContainer;
+        }
+
+        public UITabContainerHelper SetAtlas(UITextureAtlas atlas)
+        {
+            m_TabContainer.atlas = atlas;
+            return this;
+        }
+
+        public UITabContainerHelper SetBackgroundSprite(string spriteName)
+        {
+            m_TabContainer.backgroundSprite = spriteName;
+            return this;
+        }
+
+        //public UITabContainerHelper SetOwner(UITabstrip owner)
+        //{
+        //    m_TabContainer.owner = owner;
+        //    return this;
+        //}
+
+        public UITabContainerHelper SetPadding(RectOffset padding)
+        {
+            m_TabContainer.padding = padding;
+            return this;
+        }
+
+        public UITabContainerHelper SetSelectedIndex(int index)
+        {
+            m_TabContainer.selectedIndex = index;
             return this;
         }
     }

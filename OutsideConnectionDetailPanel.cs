@@ -67,6 +67,91 @@ namespace AdvancedOutsideConnection
             public event MouseEventHandler eventDeleteClicked;
         }
 
+        class MaterialRowComponent : TableRowComponent
+        {
+            private bool m_IsRefreshing = false;
+            private UIPanel m_MainPanel = null;
+            private UISprite m_Icon = null;
+            private UISlider m_Slider = null;
+            private UILabel m_PercentLabel = null;
+            private TransferManager.TransferReason m_Material = TransferManager.TransferReason.None;
+
+            public event PropertyChangedEventHandler<float> eventRatioChanged;
+
+            public TransferManager.TransferReason Material
+            { 
+                get { return m_Material; }
+                set
+                {
+                    m_Material = value;
+                    Utils.SetupSpriteForMaterial(m_Icon, m_Material);
+                    m_Slider.objectUserData = m_Material;
+                }
+            }
+
+            private new void Awake()
+            {
+                m_MainPanel = gameObject.AddComponent<UIPanel>();
+                m_MainPanel.name = "MainPanel";
+                m_MainPanel.size = new Vector2(200, 18);
+
+                base.Awake();
+
+                m_Icon = fw.ui.UIHelper.AddSprite(m_MainPanel).
+                    SetRelativePosition(new Vector3(2, 0)).
+                    SetName("Icon").
+                    SetSize(new Vector2(24, 24)).
+                    SetAnchor(UIAnchorStyle.CenterVertical | UIAnchorStyle.Left).
+                    GetSprite(true);
+
+                Utils.SetupSpriteForMaterial(m_Icon, TransferManager.TransferReason.Coal);
+
+                m_Slider = fw.ui.UIHelper.AddSlider(m_MainPanel, UIOrientation.Horizontal).
+                    SetMinValue(0).
+                    SetMaxValue(100).
+                    SetStepSize(0.3f).
+                    MoveRightOf(m_Icon, 8).
+                    SetRelativeY(6).
+                    SetAnchor(UIAnchorStyle.CenterVertical | UIAnchorStyle.Right | UIAnchorStyle.Left).
+                    GetSlider();
+                m_Slider.eventValueChanged += OnSliderValueChanged;
+
+                var labelPadding = new RectOffset(5, 5, 2, 0);
+                m_PercentLabel = fw.ui.UIHelper.AddLabel(m_MainPanel).
+                    SetName("Label").
+                    SetTooltip("Percentage rate for the likeliness place such an offer.").
+                    SetBackgroundSprite(fw.CommonSprites.GenericPanel).
+                    SetColor(Color.gray).
+                    SetSuffix(" %").
+                    SetPadding(labelPadding).
+                    MoveRightOf(m_Slider, 5).
+                    SetRelativeY(0).
+                    SetTextScale(0.7f).
+                    SpanInnerRight(m_MainPanel, 5).
+                    SetTextAlignment(UIHorizontalAlignment.Right).
+                    SetAnchor(UIAnchorStyle.CenterVertical | UIAnchorStyle.Right).
+                    GetLabel();
+            }
+
+            public void RefreshData(float percent)
+            {
+                if (m_IsRefreshing || m_Material == TransferManager.TransferReason.None)
+                    return;
+
+                m_IsRefreshing = true;
+
+                m_Slider.value = percent;
+                m_PercentLabel.text = percent.ToString("0.00");
+
+                m_IsRefreshing = false;
+            }
+
+            private void OnSliderValueChanged(UIComponent component, float value)
+            {
+                eventRatioChanged?.Invoke(component, value);
+            }
+        }
+
         private ushort m_BuildingID = 0;
         public ushort buildingID => m_BuildingID;
         private OutsideConnectionSettings m_CachedSettings = null;
@@ -82,14 +167,20 @@ namespace AdvancedOutsideConnection
         private UILabel m_RandomNameCountLabel = null;
         private UITextField m_SingleNameTextFrame = null;
         private UIPanel m_SettingsPanel = null;
-        private UILabel m_DirectionLabel = null;
+        //private UILabel m_DirectionLabel = null;
         private UICheckBox m_DirectionInCheckbox = null;
         private UICheckBox m_DirectionOutCheckbox = null;
         private UILabel m_TransportTypeLabel = null;
         private UITextField m_DummyTrafficFactorTextfield = null;
         private UICheckBox[] m_NameModeCheckBoxes = null;
+
+        private UIPanel m_TouristSubPanel = null;
         private UITextField[] m_TouristFactorTextFields = null;
         private UILabel[] m_TouristFactorLabels = null;
+
+        private UIPanel m_GoodsSubPanel = null;
+        private UIPanel m_ResourceImportPanel = null;
+        private UIPanel m_ResourceExportPanel = null;
 
         private bool m_Initialized = false;
         private bool m_IsRefreshing = false;
@@ -121,8 +212,8 @@ namespace AdvancedOutsideConnection
 
             m_MainPanel = fw.ui.UIHelper.MakeMainPanel(gameObject).
                 SetName(m_MainPanelName).
-                SetSize(new Vector2(500, 500)).
-                SetMinimumSize(new Vector2(500, 150)).
+                SetSize(new Vector2(500, 700)).
+                SetMinimumSize(new Vector2(500, 500)).
                 SetClipChildren(false).
                 GetPanel();
 
@@ -206,7 +297,7 @@ namespace AdvancedOutsideConnection
                 SetName("SettingsPanel").
                 SetBackgroundSprite(fw.CommonSprites.GenericPanel).
                 SetColor(fw.ui.UIHelper.contenPanelColor).
-                SetSize(new Vector2(m_MainPanel.width - 10, 120)).
+                SetSize(new Vector2(m_MainPanel.width - 10, 505)).
                 SetRelativeX(5).
                 MoveBottomOf(m_PanelIcon, 2).
                 SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top | UIAnchorStyle.Right).
@@ -214,29 +305,20 @@ namespace AdvancedOutsideConnection
 
             m_TransportTypeLabel = fw.ui.UIHelper.AddLabel(m_SettingsPanel, false).
                 SetName("TransportTypeLabel").
-                SetAutoSize(true).
+                //SetAutoSize(true).
+                SetWidth(50).
                 SetTextScale(textScale).
                 SetRelativePosition(new Vector3(10, 10)).
                 SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top).
                 GetLabel(true);
-
-            m_DirectionLabel = fw.ui.UIHelper.AddLabel(m_SettingsPanel, false).
-                SetName("DirectionLabel").
-                SetText("Direction").
-                SetAutoSize(true).
-                SetTextScale(textScale).
-                SetTextAlignment(UIHorizontalAlignment.Center).
-                MoveInnerTopRightOf(m_SettingsPanel, new Vector3(25, 10)).
-                SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.Top).
-                GetLabel();
 
             m_DirectionOutCheckbox = fw.ui.UIHelper.AddCheckBox(m_SettingsPanel).
                 SetName("DirectionOutCheckBox").
                 SetText("Out").
                 SetTextScale(textScale).
                 SetWidth(50).
-                MoveInnerRightOf(m_SettingsPanel, 5).
-                MoveBottomOf(m_DirectionLabel, 5).
+                MoveRightOf(m_TransportTypeLabel, 5).
+                SetRelativeY(5).
                 SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.Top).
                 SetObjectUserData(Building.Flags.Incoming).
                 GetCheckBox();
@@ -247,8 +329,8 @@ namespace AdvancedOutsideConnection
                 SetText("In").
                 SetTextScale(textScale).
                 SetWidth(40).
+                MoveRightOf(m_DirectionOutCheckbox, 5).
                 SetRelativeY(m_DirectionOutCheckbox.relativePosition.y).
-                MoveLeftOf(m_DirectionOutCheckbox, 5).
                 SetAnchor(UIAnchorStyle.Right | UIAnchorStyle.Top).
                 SetObjectUserData(Building.Flags.Outgoing).
                 GetCheckBox();
@@ -281,11 +363,94 @@ namespace AdvancedOutsideConnection
             m_DummyTrafficFactorTextfield.eventTextSubmitted += OnDummyTrafficFactorChanged;
 
             InitTouristSubPanel();
+            InitGoodsSubPanel();
+        }
+
+        private void InitGoodsSubPanel()
+        {
+            var textScale = 0.7f;
+
+            m_GoodsSubPanel = fw.ui.UIHelper.AddPanel(m_SettingsPanel).
+                SetName("GoodsSubPanel").
+                SetBackgroundSprite(fw.CommonSprites.GenericPanel).
+                SetColor(Color.white).
+                MoveRightOf(m_TouristSubPanel, 5).
+                SetRelativeY(5).
+                SpanInnerBottomRight(m_SettingsPanel, new Vector2(5, 5)).
+                SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Right | UIAnchorStyle.Bottom).
+                GetPanel();
+
+            var goodsIcon = fw.ui.UIHelper.AddSprite(m_GoodsSubPanel).
+                SetName("TouristIcon").
+                SetSpriteName(fw.CommonSprites.IconOutsideConnections.normal).
+                SetColor(Color.gray).
+                SetSize(new Vector2(28, 28)).
+                MoveInnerTopRightOf(m_GoodsSubPanel, new Vector3(0, 0)).
+                GetSprite();
+
+            var tabstrip = fw.ui.UIHelper.AddTabstripWithButtons(m_GoodsSubPanel, new string[] { "Import", "Export" }, textScale).
+                SetHeight(20).
+                MoveInnerLeftOf(m_GoodsSubPanel).
+                SetRelativeY(5).
+                GetTabtrip();
+
+            var tabContainer = fw.ui.UIHelper.AddTabContainer(m_GoodsSubPanel).
+                SetName("GoodsTabContainer").
+                MoveBottomOf(tabstrip, 3).
+                SetRelativeX(tabstrip.relativePosition.x).
+                SpanInnerBottomRight(m_GoodsSubPanel, new Vector2(5, 5)).
+                GetTabContainer();
+
+            m_ResourceImportPanel = fw.ui.UIHelper.AddPanel((UIPanel)tabContainer.AddTabPage("ImportPage")).
+                SetPosition(Vector3.zero).
+                SpanInnerBottomRight(tabContainer).
+                SetClipChildren(true).
+                SetAutoLayout(true).
+                SetAutoLayoutDirection(LayoutDirection.Vertical).
+                SetAutoLayoutPadding(new RectOffset(0, 0, 2, 2)).
+                SetAutoLayoutStart(LayoutStart.TopLeft).
+                GetPanel();
+
+            foreach (var material in Utils.ImportResources)
+            {
+                var gameObject = new GameObject("ImportMaterialRowComponent", new System.Type[] { typeof(MaterialRowComponent) });
+                m_ResourceImportPanel.AttachUIComponent(gameObject);
+                var materialRowComponent = gameObject.GetComponent<MaterialRowComponent>();
+                materialRowComponent.component.width = m_ResourceImportPanel.width;
+                materialRowComponent.Material = material;
+                materialRowComponent.eventRatioChanged += OnImportResourceRatioChanged;
+            }
+
+            m_ResourceExportPanel = fw.ui.UIHelper.AddPanel((UIPanel)tabContainer.AddTabPage("ExportPage")).
+                SetPosition(Vector3.zero).
+                SpanInnerBottomRight(tabContainer).
+                SetClipChildren(true).
+                SetAutoLayout(true).
+                SetAutoLayoutDirection(LayoutDirection.Vertical).
+                SetAutoLayoutPadding(new RectOffset(0, 0, 2, 2)).
+                SetAutoLayoutStart(LayoutStart.TopLeft).
+                GetPanel();
+
+            foreach (var material in Utils.ExportResources)
+            {
+                var gameObject = new GameObject("ExportMaterialRowComponent", new System.Type[] { typeof(MaterialRowComponent) });
+                m_ResourceExportPanel.AttachUIComponent(gameObject);
+                var materialRowComponent = gameObject.GetComponent<MaterialRowComponent>();
+                materialRowComponent.component.width = m_ResourceExportPanel.width;
+                materialRowComponent.Material = material;
+                materialRowComponent.eventRatioChanged += OnImportResourceRatioChanged;
+            }
+            // really don't know why I have to do this. Both tab pages are rendered at once, so this is the workaround to solve this. (I fucking hate this shitty UI...)
+            tabContainer.selectedIndex = 1;
+            tabstrip.tabPages = tabContainer;
+            tabstrip.startSelectedIndex = 0;
+            tabstrip.selectedIndex = 0;
+            tabContainer.selectedIndex = 0;
         }
 
         private void InitTouristSubPanel()
         {
-            var touristPanel = fw.ui.UIHelper.AddPanel(m_SettingsPanel).
+            m_TouristSubPanel = fw.ui.UIHelper.AddPanel(m_SettingsPanel).
                 SetName("TouristSubPanel").
                 SetBackgroundSprite(fw.CommonSprites.GenericPanel).
                 SetColor(Color.white).
@@ -296,17 +461,17 @@ namespace AdvancedOutsideConnection
                 SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left | UIAnchorStyle.Bottom).
                 GetPanel();
 
-            var touristIcon = fw.ui.UIHelper.AddSprite(touristPanel).
+            var touristIcon = fw.ui.UIHelper.AddSprite(m_TouristSubPanel).
                 SetName("TouristIcon").
                 SetSpriteName(fw.CommonSprites.IconTourist).
                 SetColor(Color.gray).
                 SetSize(new Vector2(36, 36)).
-                MoveInnerTopLeftOf(touristPanel, new Vector3(- 5, -5)).
+                MoveInnerTopLeftOf(m_TouristSubPanel, new Vector3(- 5, -5)).
                 GetSprite();
 
             var wealthyIconSize = new Vector2(24, 24);
 
-            var lowWealthyIcon = fw.ui.UIHelper.AddSprite(touristPanel).
+            var lowWealthyIcon = fw.ui.UIHelper.AddSprite(m_TouristSubPanel).
                 SetName("LowWealthyIcon").
                 SetSpriteName(fw.CommonSprites.InfoIconLandValue.disabled).
                 SetSize(wealthyIconSize).
@@ -314,7 +479,7 @@ namespace AdvancedOutsideConnection
                 SetRelativeY(0).
                 GetSprite();
 
-            var mediumWealthyIcon = fw.ui.UIHelper.AddSprite(touristPanel).
+            var mediumWealthyIcon = fw.ui.UIHelper.AddSprite(m_TouristSubPanel).
                 SetName("MediumWealthyIcon").
                 SetSpriteName(fw.CommonSprites.InfoIconLandValue.focused).
                 SetSize(wealthyIconSize).
@@ -322,7 +487,7 @@ namespace AdvancedOutsideConnection
                 MoveBottomOf(lowWealthyIcon, -3).
                 GetSprite();
 
-            var highWealthyIcon = fw.ui.UIHelper.AddSprite(touristPanel).
+            var highWealthyIcon = fw.ui.UIHelper.AddSprite(m_TouristSubPanel).
                 SetName("HighWealthyIcon").
                 SetSpriteName(fw.CommonSprites.InfoIconLandValue.normal).
                 SetSize(wealthyIconSize).
@@ -330,9 +495,9 @@ namespace AdvancedOutsideConnection
                 MoveBottomOf(mediumWealthyIcon, -3).
                 GetSprite();
 
-            var wealthyTextFieldPadding = new RectOffset(0, 0, 5, 5);
+            var wealthyTextFieldPadding = new RectOffset(0, 0, 2, 2);
             var wealthyTextScale = 0.7f;
-            var lowWealthyTextField = fw.ui.UIHelper.AddTextField(touristPanel).
+            var lowWealthyTextField = fw.ui.UIHelper.AddTextField(m_TouristSubPanel).
                 SetName("LowWealthySlider").
                 SetTooltip("Adjust low wealthy tourist factor. Value is clamped between 0 and 1.000.000.").
                 SetTextScale(wealthyTextScale).
@@ -346,7 +511,7 @@ namespace AdvancedOutsideConnection
                 SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
                 GetTextField(true);
 
-            var mediumWealthyTextField = fw.ui.UIHelper.AddTextField(touristPanel).
+            var mediumWealthyTextField = fw.ui.UIHelper.AddTextField(m_TouristSubPanel).
                 SetName("MediumWealthySlider").
                 SetTooltip("Adjust medium wealthy tourist factor. Value is clamped between 0 and 1.000.000.").
                 SetTextScale(wealthyTextScale).
@@ -360,7 +525,7 @@ namespace AdvancedOutsideConnection
                 SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
                 GetTextField(true);
 
-            var highWealthyTextField = fw.ui.UIHelper.AddTextField(touristPanel).
+            var highWealthyTextField = fw.ui.UIHelper.AddTextField(m_TouristSubPanel).
                 SetName("HighWealthySlider").
                 SetTooltip("Adjust high wealthy tourist factor. Value is clamped between 0 and 1.000.000.").
                 SetTextScale(wealthyTextScale).
@@ -379,7 +544,7 @@ namespace AdvancedOutsideConnection
             highWealthyTextField.eventTextSubmitted += OnTouristFactorChanged;
 
             var labelPadding = new RectOffset(5, 5, 2, 0);
-            var lowWealthyLabel = fw.ui.UIHelper.AddLabel(touristPanel).
+            var lowWealthyLabel = fw.ui.UIHelper.AddLabel(m_TouristSubPanel).
                 SetName("LowWealthyLabel").
                 SetTooltip("Percentage rate about the likeliness to spawn a tourist of this wealthness.").
                 SetBackgroundSprite(fw.CommonSprites.GenericPanel).
@@ -389,12 +554,12 @@ namespace AdvancedOutsideConnection
                 MoveRightOf(lowWealthyTextField, 5).
                 SetRelativeY(lowWealthyTextField.relativePosition.y + 2).
                 SetTextScale(wealthyTextScale).
-                SpanInnerRight(touristPanel, 5).
+                SpanInnerRight(m_TouristSubPanel, 5).
                 SetTextAlignment(UIHorizontalAlignment.Right).
                 SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
                 GetLabel();
 
-            var mediumWealthyLabel = fw.ui.UIHelper.AddLabel(touristPanel).
+            var mediumWealthyLabel = fw.ui.UIHelper.AddLabel(m_TouristSubPanel).
                 SetName("MediumWealthyLabel").
                 SetTooltip("Percentage rate about the likeliness to spawn a tourist of this wealthness.").
                 SetBackgroundSprite(fw.CommonSprites.GenericPanel).
@@ -404,12 +569,12 @@ namespace AdvancedOutsideConnection
                 MoveRightOf(mediumWealthyTextField, 5).
                 SetRelativeY(mediumWealthyTextField.relativePosition.y + 2).
                 SetTextScale(wealthyTextScale).
-                SpanInnerRight(touristPanel, 5).
+                SpanInnerRight(m_TouristSubPanel, 5).
                 SetTextAlignment(UIHorizontalAlignment.Right).
                 SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
                 GetLabel();
 
-            var highWealthyLabel = fw.ui.UIHelper.AddLabel(touristPanel).
+            var highWealthyLabel = fw.ui.UIHelper.AddLabel(m_TouristSubPanel).
                 SetName("HighWealthyLabel").
                 SetTooltip("Percentage rate about the likeliness to spawn a tourist of this wealthness.").
                 SetBackgroundSprite(fw.CommonSprites.GenericPanel).
@@ -419,7 +584,7 @@ namespace AdvancedOutsideConnection
                 MoveRightOf(highWealthyTextField, 5).
                 SetRelativeY(highWealthyTextField.relativePosition.y + 2).
                 SetTextScale(wealthyTextScale).
-                SpanInnerRight(touristPanel, 5).
+                SpanInnerRight(m_TouristSubPanel, 5).
                 SetTextAlignment(UIHorizontalAlignment.Right).
                 SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Left).
                 GetLabel();
@@ -433,10 +598,11 @@ namespace AdvancedOutsideConnection
             m_NameGenerationPanel = fw.ui.UIHelper.AddPanel(m_MainPanel).
                 SetName("NameGenerationGroupPanel").
                 SetBackgroundSprite(fw.CommonSprites.GenericPanel).
-                SetSize(new Vector2(m_MainPanel.width - 10, 300)).
                 SetColor(fw.ui.UIHelper.contenPanelColor).
-                MoveTopOf(m_BottomResizeHandle).
+                MoveBottomOf(m_SettingsPanel, 5).
                 SetRelativeX(5).
+                SpanBottom(m_BottomResizeHandle).
+                SpanInnerRight(m_MainPanel, 5).
                 SetAnchor(UIAnchorStyle.All).
                 GetPanel();
 
@@ -559,6 +725,34 @@ namespace AdvancedOutsideConnection
             }
         }
 
+        private void RefreshImportResourceComponents()
+        {
+            var oldIsRefreshing = m_IsRefreshing;
+            m_IsRefreshing = true;
+
+            for (int i = 0; i < m_CachedSettings.ImportResourceRatio.Length; ++i)
+            {
+                var row = m_ResourceImportPanel.components[i].gameObject.GetComponent<MaterialRowComponent>();
+                row.RefreshData((float)m_CachedSettings.ImportResourceRatio[i] / 100);
+            }
+
+            m_IsRefreshing = oldIsRefreshing;
+        }
+
+        private void RefreshExportResourceComponents()
+        {
+            var oldIsRefreshing = m_IsRefreshing;
+            m_IsRefreshing = true;
+
+            for (int i = 0; i < m_CachedSettings.ExportResourceRatio.Length; ++i)
+            {
+                var row = m_ResourceExportPanel.components[i].gameObject.GetComponent<MaterialRowComponent>();
+                row.RefreshData((float)m_CachedSettings.ExportResourceRatio[i] / 100);
+            }
+
+            m_IsRefreshing = oldIsRefreshing;
+        }
+
         private void RefreshDirectionCheckbox(UICheckBox checkbox)
         {
             var oldIsRefreshing = m_IsRefreshing;
@@ -597,6 +791,7 @@ namespace AdvancedOutsideConnection
             }
 
             // Even if it looks strange on the overview panel, this is how the actual game code works. ;)
+            // Each dummy traffic tourist will be a wealthy one.
             if (accumulated == 0)
                 m_TouristFactorLabels[2].text = (100f).ToString("0.0");
 
@@ -624,6 +819,8 @@ namespace AdvancedOutsideConnection
             RefreshDirectionCheckbox(m_DirectionOutCheckbox);
             RefreshDummyTrafficFactorTextfield();
             RefreshTouristPanel();
+            RefreshImportResourceComponents();
+            RefreshExportResourceComponents();
 
             foreach (var comp in m_NameModeCheckBoxes)
             {
@@ -701,6 +898,24 @@ namespace AdvancedOutsideConnection
 
             if (m_LocationMarkerButton.activeStateIndex == 1)
                 ZoomToLocation();
+        }
+
+        private void OnImportResourceRatioChanged(UIComponent component, float value)
+        {
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            Utils.ApplyNewImportResourceRatio(ref m_CachedSettings.ImportResourceRatio, (int)(value * 100), (TransferManager.TransferReason)component.objectUserData);
+            RefreshImportResourceComponents();
+        }
+
+        private void OnExportResourceRatioChanged(UIComponent component, float value)
+        {
+            if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
+                return;
+
+            Utils.ApplyNewImportResourceRatio(ref m_CachedSettings.ImportResourceRatio, (int)(value * 100), (TransferManager.TransferReason)component.objectUserData);
+            RefreshExportResourceComponents();
         }
 
         private void OnTouristFactorChanged(UIComponent component, string text)

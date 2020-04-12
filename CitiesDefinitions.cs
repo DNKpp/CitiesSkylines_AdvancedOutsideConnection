@@ -41,6 +41,76 @@ namespace AdvancedOutsideConnection.framework
         public static readonly string IconTouristCar = "IconTouristCar";
 
         public static readonly string InfoPanelIconCurrency = "InfoPanelIconCurrency";
+        public static readonly string InfoIconFishing = "InfoIconFishing";
+        public static readonly string InfoIconPost = "InfoIconPost";
+
+        public static readonly string OptionsDropboxListbox = "OptionsDropboxListbox";
+
+        public static readonly string ResourceIconLogs = "resourceIconLogs";
+        public static readonly string ResourceIconPaper = "resourceIconPaper";
+        public static readonly string ResourceIconPlanedTimber = "resourceIconPlanedTimber";
+
+        public static readonly string ResourceIconCrops = "resourceIconCrops";
+        public static readonly string ResourceIconFlours = "resourceIconflours";
+        public static readonly string ResourceIconAnimalProducts = "resourceIconAnimalProducts";
+
+        public static readonly string ResourceIconOre = "resourceIconOre";
+        public static readonly string ResourceIconMetal = "resourceIconMetal";
+        public static readonly string ResourceIconGlass = "resourceIconGlass";
+
+        public static readonly string ResourceIconOil = "resourceIconOil";
+        public static readonly string ResourceIconPetroleum = "resourceIconPetroleum";
+        public static readonly string ResourceIconPlastics = "resourceIconPlastics";
+
+        public static readonly string ResourceIconLuxuryProducts = "resourceIconLuxuryProducts";
+
+        public static readonly SpriteSet IconPolicyOil = new SpriteSet(
+            "IconPolicyOil",
+            "IconPolicyOilDisabled",
+            "IconPolicyOilFocused",
+            "IconPolicyOilHovered",
+            "IconPolicyOilPressed"
+        );
+
+        public static readonly SpriteSet IconPolicyOre = new SpriteSet(
+            "IconPolicyOre",
+            "IconPolicyOreDisabled",
+            "IconPolicyOreFocused",
+            "IconPolicyOreHovered",
+            "IconPolicyOrePressed"
+        );
+
+        public static readonly SpriteSet IconPolicyForest = new SpriteSet(
+            "IconPolicyForest",
+            "IconPolicyForestDisabled",
+            "IconPolicyForestFocused",
+            "IconPolicyForestHovered",
+            "IconPolicyForestPressed"
+        );
+
+        public static readonly SpriteSet IconPolicyFarming = new SpriteSet(
+            "IconPolicyFarming",
+            "IconPolicyFarmingDisabled",
+            "IconPolicyFarmingFocused",
+            "IconPolicyFarmingHovered",
+            "IconPolicyFarmingPressed"
+        );
+
+        public static readonly SpriteSet OptionsDropbox = new SpriteSet(
+            "OptionsDropbox",
+            "OptionsDropboxDisabled",
+            "OptionsDropboxFocused",
+            "OptionsDropboxHovered",
+            "OptionsDropboxPressed"
+        );
+
+        public static readonly SpriteSet GenericTab = new SpriteSet(
+            "GenericTab",
+            "GenericTabDisabled",
+            "GenericTabFocused",
+            "GenericTabHovered",
+            "GenericTabPressed"
+        );
 
         public static readonly SpriteSet IconOutsideConnections = new SpriteSet(
             "InfoIconOutsideConnections",
@@ -266,6 +336,15 @@ namespace AdvancedOutsideConnection.framework
             CommonSprites.LocationMarkerActive.hovered,
             CommonSprites.LocationMarkerActive.pressed
         );
+
+        public static readonly SpriteSet OptionsDropbox = new SpriteSet
+            (
+                CommonSprites.OptionsDropbox.normal,
+                CommonSprites.OptionsDropbox.disabled,
+                CommonSprites.OptionsDropbox.focused,
+                CommonSprites.OptionsDropbox.hovered,
+                CommonSprites.OptionsDropbox.pressed
+            );
     }
 
     public static class CommonPanelNames

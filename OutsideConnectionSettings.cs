@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
 using System;
+using System.Linq;
 
 namespace AdvancedOutsideConnection
 {
@@ -39,12 +40,15 @@ namespace AdvancedOutsideConnection
         public string Name = "";
 
         public int[] TouristFactors;
+
+        public int[] ImportResourceRatio;       // ratio from 0...10000 with two additional zeros for the precision.
+        public int[] ExportResourceRatio;       // ratio from 0...10000 with two additional zeros for the precision.
     }
 
     class OutsideConnectionSettingsManager : Singleton<OutsideConnectionSettingsManager>
     {
         private static readonly string _dataID = "AOC_Data";
-        private static readonly ushort _dataVersion = 3;
+        private static readonly ushort _dataVersion = 4;
 
         private Dictionary<ushort, OutsideConnectionSettings> m_SettingsDict = null;
 
@@ -105,6 +109,8 @@ namespace AdvancedOutsideConnection
                     settings.OriginalDirectionFlags = settings.CurrentDirectionFlags;
                     settings.DummyTrafficFactor = connectionAI.m_dummyTrafficFactor;
                     settings.TouristFactors = Utils.GetTouristFactorsFromOutsideConnection(buildingID);
+                    settings.ImportResourceRatio = Utils.GetDefaultImportResourceRatio();
+                    settings.ExportResourceRatio = Utils.GetDefaultExportResourceRatio();
 
                     m_SettingsDict.Add(buildingID, settings);
                 }
@@ -139,6 +145,14 @@ namespace AdvancedOutsideConnection
 
                     SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.TouristFactors.Length, elementBuffer);
                     foreach (var value in keyValue.Value.TouristFactors)
+                        SerializableDataExtension.WriteInt32(value, elementBuffer);
+
+                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.ImportResourceRatio.Length, elementBuffer);
+                    foreach (var value in keyValue.Value.ImportResourceRatio)
+                        SerializableDataExtension.WriteInt32(value, elementBuffer);
+
+                    SerializableDataExtension.WriteUInt16((ushort)keyValue.Value.ExportResourceRatio.Length, elementBuffer);
+                    foreach (var value in keyValue.Value.ExportResourceRatio)
                         SerializableDataExtension.WriteInt32(value, elementBuffer);
 
                     SerializableDataExtension.WriteByteArray(elementBuffer, buffer);
@@ -219,16 +233,44 @@ namespace AdvancedOutsideConnection
                 if (3 <= version)
                 {
                     // even if length is not equal 3, the data must be read from buffer
+                    var touristFactorLength = SerializableDataExtension.ReadUInt16(buffer, ref index);
+                    var factors = new int[touristFactorLength];
+                    for (ushort k = 0; k < touristFactorLength; ++k)
+                    {
+                        factors[k] = SerializableDataExtension.ReadInt32(buffer, ref index);
+                    }
+                    settings.TouristFactors = factors;
+                }
+
+                if (4 <= version)
+                {
                     var ratioLength = SerializableDataExtension.ReadUInt16(buffer, ref index);
                     var ratios = new int[ratioLength];
                     for (ushort k = 0; k < ratioLength; ++k)
                     {
                         ratios[k] = SerializableDataExtension.ReadInt32(buffer, ref index);
                     }
+                    settings.ImportResourceRatio = ratios;
+
+                    ratioLength = SerializableDataExtension.ReadUInt16(buffer, ref index);
+                    ratios = new int[ratioLength];
+                    for (ushort k = 0; k < ratioLength; ++k)
+                    {
+                        ratios[k] = SerializableDataExtension.ReadInt32(buffer, ref index);
+                    }
+                    settings.ExportResourceRatio = ratios;
                 }
 
                 if (settings.TouristFactors == null || settings.TouristFactors.Length != 3)
                     settings.TouristFactors = Utils.GetTouristFactorsFromOutsideConnection(buildingID);
+
+                if (settings.ImportResourceRatio == null || settings.ImportResourceRatio.Length != Utils.ImportResources.Length ||
+                    settings.ImportResourceRatio.Aggregate((a, b) => b + a) != 10000)
+                    settings.ImportResourceRatio = Utils.GetDefaultImportResourceRatio();
+
+                if (settings.ExportResourceRatio == null || settings.ExportResourceRatio.Length != Utils.ExportResources.Length ||
+                    settings.ExportResourceRatio.Aggregate((a, b) => b + a) != 10000)
+                    settings.ExportResourceRatio = Utils.GetDefaultExportResourceRatio();
 
                 if (settingsDict.ContainsKey(buildingID))
                     Utils.LogWarning("Overrides existing outside connection with buildingID: " + buildingID);
