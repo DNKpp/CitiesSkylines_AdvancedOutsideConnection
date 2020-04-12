@@ -60,7 +60,7 @@ namespace AdvancedOutsideConnection
 
             public void EnableDelete(bool enable)
             {
-                m_DeleteButton.enabled = enable;
+                m_DeleteButton.isEnabled = enable;
             }
 
             public event PropertyChangedEventHandler<string> eventNameSubmitted;
@@ -86,6 +86,8 @@ namespace AdvancedOutsideConnection
                     m_Material = value;
                     Utils.SetupSpriteForMaterial(m_Icon, m_Material);
                     m_Slider.objectUserData = m_Material;
+                    m_Slider.tooltip = m_Icon.tooltip;
+                    m_PercentLabel.tooltip = m_Icon.tooltip;
                 }
             }
 
@@ -109,10 +111,10 @@ namespace AdvancedOutsideConnection
                 m_Slider = fw.ui.UIHelper.AddSlider(m_MainPanel, UIOrientation.Horizontal).
                     SetMinValue(0).
                     SetMaxValue(100).
-                    SetStepSize(0.3f).
+                    SetStepSize(0.2f).
                     MoveRightOf(m_Icon, 8).
-                    SetRelativeY(6).
-                    SetAnchor(UIAnchorStyle.CenterVertical | UIAnchorStyle.Right | UIAnchorStyle.Left).
+                    SetRelativeY(5).
+                    SetAnchor(UIAnchorStyle.Top | UIAnchorStyle.Right | UIAnchorStyle.Left).
                     GetSlider();
                 m_Slider.eventValueChanged += OnSliderValueChanged;
 
@@ -181,6 +183,7 @@ namespace AdvancedOutsideConnection
         private UIPanel m_GoodsSubPanel = null;
         private UIPanel m_ResourceImportPanel = null;
         private UIPanel m_ResourceExportPanel = null;
+        private UITabstrip m_ResourceTabstrip = null;
 
         private bool m_Initialized = false;
         private bool m_IsRefreshing = false;
@@ -388,7 +391,7 @@ namespace AdvancedOutsideConnection
                 MoveInnerTopRightOf(m_GoodsSubPanel, new Vector3(0, 0)).
                 GetSprite();
 
-            var tabstrip = fw.ui.UIHelper.AddTabstripWithButtons(m_GoodsSubPanel, new string[] { "Import", "Export" }, textScale).
+            m_ResourceTabstrip = fw.ui.UIHelper.AddTabstripWithButtons(m_GoodsSubPanel, new string[] { "Import", "Export" }, textScale).
                 SetHeight(20).
                 MoveInnerLeftOf(m_GoodsSubPanel).
                 SetRelativeY(5).
@@ -396,8 +399,8 @@ namespace AdvancedOutsideConnection
 
             var tabContainer = fw.ui.UIHelper.AddTabContainer(m_GoodsSubPanel).
                 SetName("GoodsTabContainer").
-                MoveBottomOf(tabstrip, 3).
-                SetRelativeX(tabstrip.relativePosition.x).
+                MoveBottomOf(m_ResourceTabstrip, 3).
+                SetRelativeX(m_ResourceTabstrip.relativePosition.x).
                 SpanInnerBottomRight(m_GoodsSubPanel, new Vector2(5, 5)).
                 GetTabContainer();
 
@@ -438,13 +441,13 @@ namespace AdvancedOutsideConnection
                 var materialRowComponent = gameObject.GetComponent<MaterialRowComponent>();
                 materialRowComponent.component.width = m_ResourceExportPanel.width;
                 materialRowComponent.Material = material;
-                materialRowComponent.eventRatioChanged += OnImportResourceRatioChanged;
+                materialRowComponent.eventRatioChanged += OnExportResourceRatioChanged;
             }
             // really don't know why I have to do this. Both tab pages are rendered at once, so this is the workaround to solve this. (I fucking hate this shitty UI...)
             tabContainer.selectedIndex = 1;
-            tabstrip.tabPages = tabContainer;
-            tabstrip.startSelectedIndex = 0;
-            tabstrip.selectedIndex = 0;
+            m_ResourceTabstrip.tabPages = tabContainer;
+            m_ResourceTabstrip.startSelectedIndex = 0;
+            m_ResourceTabstrip.selectedIndex = 0;
             tabContainer.selectedIndex = 0;
         }
 
@@ -725,15 +728,41 @@ namespace AdvancedOutsideConnection
             }
         }
 
+        private void RefreshResourceComponents()
+        {
+            if ((m_CachedSettings.CurrentDirectionFlags & Building.Flags.IncomingOutgoing) == 0)
+            {
+                m_GoodsSubPanel.Hide();
+            }
+            else
+            {
+                m_GoodsSubPanel.Show();
+                RefreshImportResourceComponents();
+                RefreshExportResourceComponents();
+
+                m_ResourceTabstrip.selectedIndex = m_ResourceImportPanel.isEnabled ? 0 : 1;
+            }
+        }
+
         private void RefreshImportResourceComponents()
         {
             var oldIsRefreshing = m_IsRefreshing;
             m_IsRefreshing = true;
 
-            for (int i = 0; i < m_CachedSettings.ImportResourceRatio.Length; ++i)
+            if ((m_CachedSettings.CurrentDirectionFlags & Building.Flags.Outgoing) != 0)
             {
-                var row = m_ResourceImportPanel.components[i].gameObject.GetComponent<MaterialRowComponent>();
-                row.RefreshData((float)m_CachedSettings.ImportResourceRatio[i] / 100);
+                m_ResourceImportPanel.isEnabled = true;
+                m_ResourceTabstrip.Find<UIButton>("Button-Import").Show();
+                for (int i = 0; i < m_CachedSettings.ImportResourceRatio.Length; ++i)
+                {
+                    var row = m_ResourceImportPanel.components[i].gameObject.GetComponent<MaterialRowComponent>();
+                    row.RefreshData((float)m_CachedSettings.ImportResourceRatio[i] / 100);
+                }
+            }
+            else
+            {
+                m_ResourceImportPanel.isEnabled = false;
+                m_ResourceTabstrip.Find<UIButton>("Button-Import").Hide();
             }
 
             m_IsRefreshing = oldIsRefreshing;
@@ -744,10 +773,20 @@ namespace AdvancedOutsideConnection
             var oldIsRefreshing = m_IsRefreshing;
             m_IsRefreshing = true;
 
-            for (int i = 0; i < m_CachedSettings.ExportResourceRatio.Length; ++i)
+            if ((m_CachedSettings.CurrentDirectionFlags & Building.Flags.Incoming) != 0)
             {
-                var row = m_ResourceExportPanel.components[i].gameObject.GetComponent<MaterialRowComponent>();
-                row.RefreshData((float)m_CachedSettings.ExportResourceRatio[i] / 100);
+                m_ResourceExportPanel.isEnabled = true;
+                m_ResourceTabstrip.Find<UIButton>("Button-Export").Show();
+                for (int i = 0; i < m_CachedSettings.ExportResourceRatio.Length; ++i)
+                {
+                    var row = m_ResourceExportPanel.components[i].gameObject.GetComponent<MaterialRowComponent>();
+                    row.RefreshData((float)m_CachedSettings.ExportResourceRatio[i] / 100);
+                }
+            }
+            else
+            {
+                m_ResourceExportPanel.isEnabled = false;
+                m_ResourceTabstrip.Find<UIButton>("Button-Export").Hide();
             }
 
             m_IsRefreshing = oldIsRefreshing;
@@ -819,8 +858,7 @@ namespace AdvancedOutsideConnection
             RefreshDirectionCheckbox(m_DirectionOutCheckbox);
             RefreshDummyTrafficFactorTextfield();
             RefreshTouristPanel();
-            RefreshImportResourceComponents();
-            RefreshExportResourceComponents();
+            RefreshResourceComponents();
 
             foreach (var comp in m_NameModeCheckBoxes)
             {
@@ -914,7 +952,7 @@ namespace AdvancedOutsideConnection
             if (m_IsRefreshing || m_BuildingID == 0 || m_CachedSettings == null)
                 return;
 
-            Utils.ApplyNewImportResourceRatio(ref m_CachedSettings.ImportResourceRatio, (int)(value * 100), (TransferManager.TransferReason)component.objectUserData);
+            Utils.ApplyNewExportResourceRatio(ref m_CachedSettings.ExportResourceRatio, (int)(value * 100), (TransferManager.TransferReason)component.objectUserData);
             RefreshExportResourceComponents();
         }
 
@@ -996,15 +1034,15 @@ namespace AdvancedOutsideConnection
             // do not allow to apply/remove flags, which weren't set in the original
             if ((m_CachedSettings.OriginalDirectionFlags & flag) == 0)
                 return;
-            Utils.Log("flag before: " + buildingFlags);
             if (isChecked)
                 buildingFlags |= flag;
             else
                 buildingFlags &= ~flag;
-            Utils.Log("flag after: " + buildingFlags);
 
             m_CachedSettings.CurrentDirectionFlags = buildingFlags & Building.Flags.IncomingOutgoing;
             BuildingManager.instance.m_buildings.m_buffer[m_BuildingID].m_flags = buildingFlags;     // need to push back the copy
+
+            RefreshResourceComponents();
 
             eventDirectionChanged?.Invoke(m_BuildingID, m_CachedSettings.CurrentDirectionFlags);
         }
