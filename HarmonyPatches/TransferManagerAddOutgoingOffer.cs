@@ -18,10 +18,10 @@ namespace AdvancedOutsideConnection.HarmonyPatches
         {
             if (offer.m_object.Building != 0 && OutsideConnectionSettingsManager.instance.SettingsDict.TryGetValue(offer.m_object.Building, out OutsideConnectionSettings settings))
             {
-                var oldMat = material;
+                //var oldMat = material;
                 Utils.ModMaterialIfNecessary(ref material, settings.ImportResourceRatio, Utils.ImportResources);
-                if (oldMat != material)
-                    Utils.Log("Import resource from connection named: " + settings.Name + " Switched from material: " + oldMat + " to material: " + material);
+                //if (oldMat != material)
+                //    Utils.Log("Import resource from connection named: " + settings.Name + " Switched from material: " + oldMat + " to material: " + material);
             }
             return true;
         }
