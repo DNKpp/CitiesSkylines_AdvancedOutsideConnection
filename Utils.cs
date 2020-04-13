@@ -4,6 +4,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+using ColossalFramework.PlatformServices;
 using ColossalFramework.UI;
 using System;
 using System.Linq;
@@ -128,6 +129,14 @@ namespace AdvancedOutsideConnection
                     tooltip = "Industries DLC final resource sorted mail.";
                     spriteName = fw.CommonSprites.InfoIconPost;
                     break;
+                case TransferManager.TransferReason.IncomingMail:
+                    tooltip = "Industries DLC import resource incoming mail.";
+                    spriteName = fw.CommonSprites.InfoIconPost;
+                    break;
+                case TransferManager.TransferReason.OutgoingMail:
+                    tooltip = "Industries DLC export resource outgoing mail.";
+                    spriteName = fw.CommonSprites.InfoIconPost;
+                    break;
 
                 // sunset harbour dlc
                 case TransferManager.TransferReason.Fish:
@@ -223,7 +232,19 @@ namespace AdvancedOutsideConnection
             return true;
         }
 
-        public static readonly TransferManager.TransferReason[] ImportResources =
+        private static TransferManager.TransferReason[] m_ImportResources = null;
+
+        private static TransferManager.TransferReason[] CreateImportResourcesArray()
+        {
+            var resources = VanillaImportResources;
+            if (SteamHelper.IsDLCOwned(SteamHelper.DLC.IndustryDLC))
+            {
+                resources = ConcatArrays(resources, DLCIndustriesImportResources);
+            }
+            return resources;
+        }
+
+        public static readonly TransferManager.TransferReason[] VanillaImportResources =
         {
                 TransferManager.TransferReason.Oil,
                 TransferManager.TransferReason.Ore,
@@ -234,24 +255,61 @@ namespace AdvancedOutsideConnection
                 TransferManager.TransferReason.Food,
                 TransferManager.TransferReason.Lumber,
                 TransferManager.TransferReason.Goods,
-                TransferManager.TransferReason.UnsortedMail,
-                TransferManager.TransferReason.SortedMail
         };
 
-        public static readonly TransferManager.TransferReason[] ExportResources =
+        public static readonly TransferManager.TransferReason[] DLCIndustriesImportResources =
         {
-                TransferManager.TransferReason.Oil,
-                TransferManager.TransferReason.Ore,
-                TransferManager.TransferReason.Logs,
-                TransferManager.TransferReason.Grain,
-                TransferManager.TransferReason.Coal,
-                TransferManager.TransferReason.Petrol,
-                TransferManager.TransferReason.Food,
-                TransferManager.TransferReason.Lumber,
-                TransferManager.TransferReason.Goods,
-                TransferManager.TransferReason.UnsortedMail,
                 TransferManager.TransferReason.SortedMail,
+                TransferManager.TransferReason.IncomingMail
+        };
 
+        public static TransferManager.TransferReason[] ImportResources
+        {
+            get
+            {
+                if (m_ImportResources == null)
+                    m_ImportResources = CreateImportResourcesArray();
+                return m_ImportResources;
+            }
+        }
+
+        private static TransferManager.TransferReason[] m_ExportResources = null;
+
+        private static TransferManager.TransferReason[] CreateExportResourcesArray()
+        {
+            var resources = VanillaExportResources;
+            if (SteamHelper.IsDLCOwned(SteamHelper.DLC.IndustryDLC))
+            {
+                resources = ConcatArrays(resources, DLCIndustriesExportResources);
+            }
+
+            if (SteamHelper.IsDLCOwned(SteamHelper.DLC.UrbanDLC))
+            {
+                resources = ConcatArrays(resources, DLCSunsetHarbourExportResources);
+            }
+            return resources;
+        }
+
+        public static readonly TransferManager.TransferReason[] VanillaExportResources =
+        {
+            // base resources
+            TransferManager.TransferReason.Ore,
+            TransferManager.TransferReason.Oil,
+            TransferManager.TransferReason.Grain,
+            TransferManager.TransferReason.Logs,
+
+            // processed resources
+            TransferManager.TransferReason.Goods,
+            TransferManager.TransferReason.Coal,
+            TransferManager.TransferReason.Petrol,
+            TransferManager.TransferReason.Food,
+            TransferManager.TransferReason.Lumber,
+        };
+
+        public static readonly TransferManager.TransferReason[] DLCIndustriesExportResources =
+        {
+                TransferManager.TransferReason.UnsortedMail,
+                TransferManager.TransferReason.OutgoingMail,
                 TransferManager.TransferReason.Glass,
                 TransferManager.TransferReason.Metals,
                 TransferManager.TransferReason.Petroleum,
@@ -261,8 +319,22 @@ namespace AdvancedOutsideConnection
                 TransferManager.TransferReason.Paper,
                 TransferManager.TransferReason.PlanedTimber,
                 TransferManager.TransferReason.LuxuryProducts,
+        };
+
+        public static readonly TransferManager.TransferReason[] DLCSunsetHarbourExportResources =
+        {
                 TransferManager.TransferReason.Fish
         };
+
+        public static TransferManager.TransferReason[] ExportResources
+        {
+            get
+            {
+                if (m_ExportResources == null)
+                    m_ExportResources = CreateExportResourcesArray();
+                return m_ExportResources;
+            }
+        }
 
         public static bool IsRoutesViewOn()
         {
@@ -283,6 +355,14 @@ namespace AdvancedOutsideConnection
         public static Building QueryBuilding(ushort buildingID)
         {
             return BuildingManager.instance.m_buildings.m_buffer[buildingID];
+        }
+
+        public static T[] ConcatArrays<T>(T[] lhs, T[] rhs)
+        {
+            var concatArray = new T[lhs.Length + rhs.Length];
+            lhs.CopyTo(concatArray, 0);
+            rhs.CopyTo(concatArray, lhs.Length);
+            return concatArray;
         }
 
         public static string GetSpriteNameForTransferReason(TransferManager.TransferReason reason)
