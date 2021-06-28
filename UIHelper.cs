@@ -288,6 +288,18 @@ namespace AdvancedOutsideConnection.framework.ui
 			return helper;
 		}
 
+		public static UIButtonHelper AddTextButton(UIComponent parent, string text)
+		{
+			var helper = new UIButtonHelper(parent.AddUIComponent<UIButton>());
+			helper.SetName("Button").
+				SetText(text).
+				SetBackgroundSprites(CommonSprites.ButtonMenu).
+				SetTextPadding(new RectOffset(5, 5, 2, 2)).
+				SetAutoSize(true).
+				SetRelativePosition(Vector3.zero);
+			return helper;
+		}
+
 		public static UIMultiStateButtonHelper AddMultiStateButton(UIComponent parent)
 		{
 			var helper = new UIMultiStateButtonHelper(parent.AddUIComponent<UIMultiStateButton>());
