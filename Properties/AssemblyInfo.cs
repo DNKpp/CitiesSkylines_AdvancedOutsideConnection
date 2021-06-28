@@ -1,8 +1,8 @@
 ﻿
-//          Copyright Dominic Koepke 2020 - 2020.
+//		  Copyright Dominic Koepke 2020 - 2021.
 // Distributed under the Boost Software License, Version 1.0.
-//    (See accompanying file LICENSE_1_0.txt or copy at
-//          https://www.boost.org/LICENSE_1_0.txt)
+//	(See accompanying file LICENSE_1_0.txt or copy at
+//		  https://www.boost.org/LICENSE_1_0.txt)
 
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -30,10 +30,10 @@ using System.Runtime.InteropServices;
 
 // Versionsinformationen für eine Assembly bestehen aus den folgenden vier Werten:
 //
-//      Hauptversion
-//      Nebenversion
-//      Buildnummer
-//      Revision
+//	  Hauptversion
+//	  Nebenversion
+//	  Buildnummer
+//	  Revision
 //
 // Sie können alle Werte angeben oder Standardwerte für die Build- und Revisionsnummern verwenden,
 // indem Sie "*" wie unten gezeigt eingeben:

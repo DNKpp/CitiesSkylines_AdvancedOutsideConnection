@@ -7,7 +7,7 @@ Mail: DNKpp2011@gmail.com
 [BSL-1.0](https://github.com/DNKpp/CitiesSkylines_AdvancedOutsideConnection/blob/master/LICENSE_1_0.txt) (free, open source)
 
 ```
-          Copyright Dominic Koepke 2020 - 2020.
+          Copyright Dominic Koepke 2020 - 2021.
  Distributed under the Boost Software License, Version 1.0.
     (See accompanying file LICENSE_1_0.txt or copy at
           https://www.boost.org/LICENSE_1_0.txt)
