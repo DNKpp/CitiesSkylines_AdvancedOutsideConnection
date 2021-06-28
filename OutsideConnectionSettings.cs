@@ -256,7 +256,7 @@ namespace AdvancedOutsideConnection
 
 				if (2 <= version)
 				{
-					settings.DummyTrafficFactor = SerializableDataExtension.ReadInt32(buffer, ref index);
+					settings.DummyTrafficFactor = Utils.Clamp(SerializableDataExtension.ReadInt32(buffer, ref index), 0, 1000000);
 				}
 
 				if (3 <= version)
@@ -284,8 +284,8 @@ namespace AdvancedOutsideConnection
 
 				if (5 <= version)
 				{
-					settings.CargoCapacity = SerializableDataExtension.ReadInt32(buffer, ref index);
-					settings.ResidentCapacity = SerializableDataExtension.ReadInt32(buffer, ref index);
+					settings.CargoCapacity = Utils.Clamp(SerializableDataExtension.ReadInt32(buffer, ref index), 0, 1000000);
+					settings.ResidentCapacity = Utils.Clamp(SerializableDataExtension.ReadInt32(buffer, ref index), 0, 1000000);
 				}
 
 				ValidateOutsideConnectionSettings(buildingID, ref settings);
@@ -308,6 +308,8 @@ namespace AdvancedOutsideConnection
 					fvalue /= 100.0f / ratioLength;
 					value = (int)fvalue * 50;
 				}
+				else
+					value = Utils.Clamp(value, 0, 10000);
 				ratios[k] = value;
 			}
 
