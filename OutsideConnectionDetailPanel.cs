@@ -5,7 +5,6 @@
 //		  https://www.boost.org/LICENSE_1_0.txt)
 
 using ColossalFramework.UI;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -169,6 +168,8 @@ namespace AdvancedOutsideConnection
 		private UIResizeHandle m_BottomResizeHandle = null;
 		private UIScrollablePanel m_RandomNameContainer = null;
 		private UIScrollbar m_RandomNameContainerScrollbar = null;
+		private UIPanel m_NameGenerationFooterPanel = null;
+		private UIPanel m_RandomNameButtonPanel = null;
 		private UILabel m_RandomNameCountLabel = null;
 		private UITextField m_SingleNameTextFrame = null;
 		private UIPanel m_SettingsPanel = null;
@@ -219,8 +220,8 @@ namespace AdvancedOutsideConnection
 
 			m_MainPanel = fw.ui.UIHelper.MakeMainPanel(gameObject).
 				SetName(m_MainPanelName).
-				SetSize(new Vector2(600, 700)).
-				SetMinimumSize(new Vector2(600, 500)).
+				SetSize(new Vector2(600, 600)).
+				SetMinimumSize(new Vector2(600, 1200)).
 				SetClipChildren(false).
 				GetPanel();
 
@@ -304,7 +305,7 @@ namespace AdvancedOutsideConnection
 				SetName("SettingsPanel").
 				SetBackgroundSprite(fw.CommonSprites.GenericPanel).
 				SetColor(fw.ui.UIHelper.contenPanelColor).
-				SetSize(new Vector2(m_MainPanel.width - 10, 505)).
+				SetSize(new Vector2(m_MainPanel.width - 10, 305)).
 				SetRelativeX(5).
 				MoveBottomOf(m_PanelIcon, 2).
 				SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Top | UIAnchorStyle.Right).
@@ -474,12 +475,9 @@ namespace AdvancedOutsideConnection
 		private UIScrollablePanel InitResourcePanel(string prefix, UITabContainer tabContainer, TransferManager.TransferReason[] reasons, PropertyChangedEventHandler<float> onRatioChanged, MouseEventHandler onResetButtonClicked)
 		{
 			var tabPanel = (UIPanel)tabContainer.AddTabPage(prefix + "Page");
-			var resetButton = fw.ui.UIHelper.AddButton(tabPanel).
+			var resetButton = fw.ui.UIHelper.AddTextButton(tabPanel, "Reset Ratios").
 				SetName(prefix + "ResetButton").
-				SetText("Reset Ratios").
 				SetTooltip("Resets all " + prefix + " resource ratios to default.").
-				SetBackgroundSprites(fw.CommonSprites.ButtonMenu).
-				SetTextPadding(new RectOffset(5, 5, 2, 2)).
 				MoveInnerTopRightOf(tabPanel, new Vector2(25, 0)).
 				GetButton();
 
@@ -639,8 +637,9 @@ namespace AdvancedOutsideConnection
 				SetBackgroundSprite(fw.CommonSprites.EmptySprite).
 				SetColor(Color.grey).
 				MoveLeftOf(m_RandomNameContainerScrollbar).
+				SpanInnerLeft(m_NameGenerationPanel, 5).
 				SetRelativeY(m_RandomNameContainerScrollbar.relativePosition.y).
-				SpanInnerBottomLeft(m_NameGenerationPanel, new Vector3(5, 5)).
+				SetHeight(m_RandomNameContainerScrollbar.height).
 				SetAnchor(UIAnchorStyle.All).
 				SetVerticalScrollbar(m_RandomNameContainerScrollbar).
 				GetScrollabelPanel();
@@ -656,12 +655,45 @@ namespace AdvancedOutsideConnection
 				GetTextField(true);
 			m_SingleNameTextFrame.eventTextSubmitted += OnSingleNameSubmitted;
 
-			m_RandomNameCountLabel = fw.ui.UIHelper.AddLabel(m_MainPanel, true).
+			m_RandomNameButtonPanel = fw.ui.UIHelper.AddPanel(m_NameGenerationPanel).
+				SetName("RandomNameButtonPanel").
+				SetHeight(30).
+				MoveInnerBottomRightOf(m_NameGenerationPanel).
+				SpanLeft(m_RandomNameContainerScrollbar, 5).
+				SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Bottom | UIAnchorStyle.Right).
+				GetPanel();
+
+			var pasteButton = fw.ui.UIHelper.AddTextButton(m_RandomNameButtonPanel, "paste").
+				MoveInnerBottomRightOf(m_RandomNameButtonPanel, new Vector2(5, 5)).
+				GetButton();
+			pasteButton.eventClicked += OnRndNamePasteClicked;
+
+			var copyButton = fw.ui.UIHelper.AddTextButton(m_RandomNameButtonPanel, "copy").
+				SetRelativeY(pasteButton.relativePosition.y).
+				MoveLeftOf(pasteButton, 10).
+				GetButton();
+			copyButton.eventClicked += OnRndNameCopyClicked;
+
+			var clearButton = fw.ui.UIHelper.AddTextButton(m_RandomNameButtonPanel, "clear").
+				SetRelativeY(copyButton.relativePosition.y).
+				MoveLeftOf(copyButton, 10).
+				GetButton();
+			clearButton.eventClicked += OnRndNameClearClicked;
+
+			m_NameGenerationFooterPanel = fw.ui.UIHelper.AddPanel(m_MainPanel).
+				SetName("NameGenerationFooterPanel").
+				MoveBottomOf(m_NameGenerationPanel).
+				MoveInnerLeftOf(m_MainPanel).
+				SpanInnerBottomRight(m_MainPanel).
+				SwapZOrder(m_BottomResizeHandle).
+				SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Bottom | UIAnchorStyle.Right).
+				GetPanel();
+
+			m_RandomNameCountLabel = fw.ui.UIHelper.AddLabel(m_NameGenerationFooterPanel, true).
 				SetName("NameGenerationRandomCountLabel").
 				SetPrefix("Random Names-Count: ").
 				SetAutoSize(true).
-				MoveInnerBottomLeftOf(m_MainPanel, new Vector3(10, 7)).
-				SwapZOrder(m_BottomResizeHandle).
+				MoveInnerBottomLeftOf(m_NameGenerationFooterPanel, new Vector3(10, 7)).
 				SetAnchor(UIAnchorStyle.Left | UIAnchorStyle.Bottom).
 				GetLabel();
 
@@ -684,8 +716,9 @@ namespace AdvancedOutsideConnection
 
 		private void AdjustNameGenerationComponentVisibility()
 		{
-			m_RandomNameCountLabel.Hide();
+			m_NameGenerationFooterPanel.Hide();
 			m_RandomNameContainerScrollbar.Hide();
+			m_RandomNameButtonPanel.Hide();
 			m_RandomNameContainer.Hide();
 			m_SingleNameTextFrame.Hide();
 
@@ -694,7 +727,8 @@ namespace AdvancedOutsideConnection
 				case OutsideConnectionSettings.NameModeType.CustomRandom:
 					m_RandomNameContainerScrollbar.Show();
 					m_RandomNameContainer.Show();
-					m_RandomNameCountLabel.Show();
+					m_NameGenerationFooterPanel.Show();
+					m_RandomNameButtonPanel.Show();
 					break;
 				case OutsideConnectionSettings.NameModeType.CustomSingle:
 					m_SingleNameTextFrame.Show();
@@ -1159,6 +1193,35 @@ namespace AdvancedOutsideConnection
 				}
 					++i;
 			}
+			RefreshData();
+		}
+
+		private void OnRndNameCopyClicked(UIComponent comp, UIMouseEventParameter mouseParam)
+		{
+			string copy = "";
+			foreach (var name in m_CachedSettings.RandomGenerationNames)
+			{
+				copy += name + '\n';
+			}
+			GUIUtility.systemCopyBuffer = copy;
+		}
+
+		private void OnRndNamePasteClicked(UIComponent comp, UIMouseEventParameter mouseParam)
+		{
+			var text = GUIUtility.systemCopyBuffer;
+			foreach (var name in text.Split('\n'))
+			{
+				if (!string.IsNullOrEmpty(name))
+					m_CachedSettings.RandomGenerationNames.Add(name);
+			}
+
+			RefreshData();
+		}
+
+		private void OnRndNameClearClicked(UIComponent comp, UIMouseEventParameter mouseParam)
+		{
+			m_CachedSettings.RandomGenerationNames.Clear();
+
 			RefreshData();
 		}
 
