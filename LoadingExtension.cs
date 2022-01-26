@@ -93,7 +93,6 @@ namespace AdvancedOutsideConnection
 			}
 #endif
 
-			Patcher.PatchAll();
 			SerializableDataExtension.instance.Loaded = true;
  
 			var outConMgr = OutsideConnectionSettingsManager.instance;
