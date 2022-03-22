@@ -5,6 +5,7 @@
 //		  https://www.boost.org/LICENSE_1_0.txt)
 
 using ICities;
+using CitiesHarmony.API;
 
 namespace AdvancedOutsideConnection
 {
@@ -17,5 +18,16 @@ namespace AdvancedOutsideConnection
 		public string Name { get { return ModName; } }
 
 		public string Description => "Advanced options for outside connections.";
-	}
+
+
+        /// <summary>
+        /// Called by the game when the mod is enabled.
+        /// </summary>
+        public void OnEnabled()
+        {
+            // Apply Harmony patches via Cities Harmony.
+            // Called here instead of OnCreated to allow the auto-downloader to do its work prior to launch.
+            HarmonyHelper.DoOnHarmonyReady(() => Patcher.PatchAll());
+        }
+    }
 }

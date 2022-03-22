@@ -5,10 +5,10 @@
 //		  https://www.boost.org/LICENSE_1_0.txt)
 
 using ICities;
-using Harmony;
 using UnityEngine;
 using ColossalFramework.Plugins;
 using System.Collections.Generic;
+using HarmonyLib;
 
 namespace AdvancedOutsideConnection
 {
@@ -16,17 +16,11 @@ namespace AdvancedOutsideConnection
 	{
 		public static bool InGame { get; internal set; } = false;
 
-		private static string m_HarmonyIdentifier = "connection.outside.advanced";
-
-		HarmonyInstance m_HarmonyInstance = null;
-
 		private GameObject m_GameObject = null;
 
 		public override void OnCreated(ILoading loading)
 		{
 			base.OnCreated(loading);
-
-			m_HarmonyInstance = HarmonyInstance.Create(m_HarmonyIdentifier);
 
 			if (loading.loadingComplete)
 			{
@@ -58,7 +52,6 @@ namespace AdvancedOutsideConnection
 			if (InGame)
 			{
 				Deinit();
-				m_HarmonyInstance = null;
 			}
 		}
 
@@ -83,7 +76,7 @@ namespace AdvancedOutsideConnection
 			if (late)
 			{
 				Utils.Log("LoadingExtension Init late.");
-				m_HarmonyInstance.UnpatchAll(m_HarmonyIdentifier);
+				Patcher.UnpatchAll();
 
 				var serDataWrapper = SimulationManager.instance.m_SerializableDataWrapper;
 				if (serDataWrapper != null)
@@ -100,7 +93,6 @@ namespace AdvancedOutsideConnection
 			}
 #endif
 
-			m_HarmonyInstance.PatchAll();
 			SerializableDataExtension.instance.Loaded = true;
  
 			var outConMgr = OutsideConnectionSettingsManager.instance;
@@ -118,7 +110,7 @@ namespace AdvancedOutsideConnection
 			try
 			{
 				Utils.Log("LoadingExtension Deinit.");
-				m_HarmonyInstance.UnpatchAll(m_HarmonyIdentifier);
+				Patcher.UnpatchAll();
 
 				SerializableDataExtension.instance.Loaded = false;
 

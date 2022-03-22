@@ -5,7 +5,7 @@
 //		  https://www.boost.org/LICENSE_1_0.txt)
 
 using ColossalFramework.Math;
-using Harmony;
+using HarmonyLib;
 
 namespace AdvancedOutsideConnection.HarmonyPatches
 {
